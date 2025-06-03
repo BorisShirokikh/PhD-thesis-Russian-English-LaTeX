@@ -1,0 +1,26 @@
+
+
+
+\begin{table}[h!]
+	\centering
+	\caption{\textbf{Cross-domain model performance without fine-tuning.} Column headers represent the source domains on which the model was trained, while row headers correspond to the target domains on which the model was tested. ``Sm,'' ``GE,'' and ``Ph'' refer to vendors Siemens, GE, and Philips, respectively. Results are reported as Surface Dice Scores, with corresponding standard deviations in parentheses.}
+	\label{tab:mri_baseline}
+	
+	\begin{tabular}{lcccccc}
+		\toprule
+		& Sm, 1.5T & Sm, 3T & GE, 1.5T & GE, 3T & Ph, 1.5T & Ph, 3T \\
+		\midrule
+		Sm, 1.5T & \textbf{.85 (.12)} & .51 (.15) & .72 (.08) & .56 (.13) & .71 (.10) & .71 (.07) \\
+		
+		Sm, 3T   & .72 (.08) & \textbf{.88 (.03)} & .70 (.07) & .67 (.10) & .63 (.10) & .66 (.06) \\
+		
+		GE, 1.5T & .39 (.14) & \textit{.09 (.05)} & \textbf{.87 (.05)} & \textit{.30 (.10)} & .55 (.19) & .48 (.08) \\
+		
+		GE, 3T   & .80 (.05) & .63 (.13) & .66 (.10) & \textbf{.89 (.03)} & .67 (.10) & .67 (.06) \\
+		
+		Ph, 1.5T & .63 (.08) & \textit{.25 (.07)} & \textbf{.87 (.03)} & .43 (.06) & \textbf{.89 (.03)} & .46 (.08) \\
+		
+		Ph, 3T   & .54 (.13) & .34 (.13) & .70 (.11) & .37 (.10) & .47 (.14) &  \textbf{.86 (.04)} \\
+		\bottomrule
+	\end{tabular}
+\end{table}

@@ -72,16 +72,21 @@
 \include{Dissertation/contents}        % Оглавление
 \ifnumequal{\value{contnumfig}}{1}{}{\counterwithout{figure}{chapter}}
 \ifnumequal{\value{contnumtab}}{1}{}{\counterwithout{table}{chapter}}
-\include{Dissertation/intro}    % Введение
+\include{Dissertation/Chapters/1_intro}    % Введение
 \ifnumequal{\value{contnumfig}}{1}{\counterwithout{figure}{chapter}
 }{\counterwithin{figure}{chapter}}
 \ifnumequal{\value{contnumtab}}{1}{\counterwithout{table}{chapter}
 }{\counterwithin{table}{chapter}}
-\include{Dissertation/power_system}
-\include{Dissertation/opf}
-\include{Dissertation/sampling}
-\include{Dissertation/dc_stochastic_approx}
-\include{Dissertation/dynamic_stochastic_approx}
+\include{Dissertation/Chapters/2_mri}
+%\include{Dissertation/Chapters/2_mri}
+%\include{Dissertation/Chapters/2_mri}
+%\include{Dissertation/Chapters/2_mri}
+%\include{Dissertation/Chapters/2_mri}
+%\include{Dissertation/power_system}
+%\include{Dissertation/opf}
+%\include{Dissertation/sampling}
+%\include{Dissertation/dc_stochastic_approx}
+%\include{Dissertation/dynamic_stochastic_approx}
 \include{Dissertation/conclusions}      % Заключение
 \include{Dissertation/acronyms}        % Список сокращений и условных обозначений
 % \include{Dissertation/dictionary}      % Словарь терминов
