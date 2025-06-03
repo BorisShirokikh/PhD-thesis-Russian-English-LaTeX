@@ -25,17 +25,11 @@ Most changes are done by putting the Russifying commands into if-blocks.
 
 [**Установка программного обеспечения и сборка диссертации в файлы PDF**](Readme/Installation.md).
 
-## Обсуждение
-Общие вопросы лучше всего писать в gitter-канал:
-[![Join the chat at https://gitter.im/AndreyAkinshin/Russian-Phd-LaTeX-Dissertation-Template](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/AndreyAkinshin/Russian-Phd-LaTeX-Dissertation-Template?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-Для отчётов об ошибках и для конкретных пожеланий/предложений лучше всего использовать раздел [Issues](https://github.com/AndreyAkinshin/Russian-Phd-LaTeX-Dissertation-Template/issues).
-
 ## Структура
 * [dissertation.tex](dissertation.tex): главный файл диссертации.
 * **[папка Dissertation](Dissertation/):** Структурированная система файлов с
 шаблоном диссертации.
-  * **папка images:** Папка для размещения файлов изображений, относящихся только
+  * **папка Figures:** Папка для размещения файлов изображений, относящихся только
   к диссертации.
   * [setup.tex](Dissertation/setup.tex): Файл упрощённой настройки оформления
   диссертации.

@@ -1,0 +1,352 @@
+
+
+%\chapter{Benchmark for DA in 3D Medical Image Segmentation}
+\chapter{Systematically Evaluating DA Methods in 3D Medical Image Segmentation}
+\label{chap:da_bench}
+
+
+Domain shift presents a significant challenge in applying Deep Learning to the segmentation of 3D medical images from sources like Magnetic Resonance Imaging (MRI) and Computed Tomography (CT). Although numerous Domain Adaptation methods have been developed to address this issue, they are often evaluated under impractical data shift scenarios. Specifically, the medical imaging datasets used are often either private, too small for robust training and evaluation, or limited to single or synthetic tasks.
+
+To overcome these limitations, we first introduce a M3DA benchmark comprising four publicly available, multiclass segmentation datasets. We have designed eight domain pairs featuring diverse and practically relevant distribution shifts. These include inter-modality shifts between MRI and CT and intra-modality shifts among various MRI acquisition parameters, different CT radiation doses, and presence or absence of contrast enhancement in images.
+
+Within the proposed benchmark, we evaluate more than ten existing domain adaptation methods. Our results show that none of them can consistently close the performance gap between the domains. For instance, the most effective method reduces the performance gap by about 62\% across the tasks. This highlights the need for developing novel domain adaptation algorithms to enhance the robustness and scalability of deep learning models in medical imaging.
+
+Secondly, we collect and publish the Burdenko's Glioblastoma Progression (BGP) dataset, a systematic and annotated data collection of glioblastoma MRI scans from multiple clinical sites, acquired using scanners from four different vendors and varying imaging protocols. This dataset provides a clinically relevant ``in-the-wild'' domain adaptation setup, where models must generalize across real-world acquisition variability. By including this dataset, we bridge the gap between methodological advancements in domain adaptation research and its practical deployment in clinical settings.
+
+
+\section{Introduction}
+
+Deep Learning (DL) methods have significantly advanced medical image analysis, achieving near-human-level performance in tasks like image classification, segmentation, pathology detection, and automated diagnosis \cite{medim_dl_survey_2017}. However, the widespread adoption of DL in medical imaging is hindered by the poor performance of neural networks on data from distributions different from their training set. This challenge, known as \textbf{domain shift}, is particularly prevalent in medical imaging due to changes in scanner acquisition parameters, the introduction of new imaging modalities, and population differences. Several studies have concluded that medical imaging is a crucial domain for the adoption of Domain Adaptation (DA) methods \cite{gulrajani2020search,uda_survey_2020,zhuang2020comprehensive,peng2018visda,zhang2021empirical}. Despite this, there is a lack of a common benchmark for testing DL methods in the field of 3D medical imaging.
+
+
+\begin{figure*}[h]
+	\centering
+	\includegraphics[width=0.80\linewidth]{Dissertation/Figures/4_da_bench/fig1_teaser.png}
+	\caption{Using the best DA method in the M3DA benchmark closes only 62\% of the performance gap between domains on average. Here, \% indicates the gap closed between the baseline level and oracle (outer) circle.}
+	\label{fig:teaser1}
+\end{figure*}
+
+
+\begin{figure*}[h]
+	\centering
+	\includegraphics[width=1\linewidth]{Dissertation/Figures/4_da_bench/fig2_bench_examples.png}
+	\caption{Examples from individual domains in M3DA without segmentation masks for visual comparison between domains. Left to right, top to bottom: CT to MR, CT to LDCT, CT CE to CT native, CE T1 to T1, T1 Field (1.5T to 3T), T1 Scanner (Philips to Siemens).}
+	\label{fig:teaser2}
+\end{figure*}
+
+
+\begin{figure*}[h]
+	\centering
+	\includegraphics[width=1\linewidth]{Dissertation/Figures/4_da_bench/fig2_bench_contours.png}
+	\caption{Examples from individual domains in M3DA with the corresponding segmentation masks. Left to right, top to bottom: CT to MR, CT to LDCT, CT CE to CT native, CE T1 to T1, T1 Field (1.5T to 3T), T1 Scanner (Philips to Siemens). Different colors correspond to different segmentation classes.}
+	\label{fig:contours}
+\end{figure*}
+
+Recent works have focused on developing DA methods, revealing that 3D medical image segmentation algorithms are particularly susceptible to domain shift. Researchers have tested their methods against various sources of domain shift, including shifts between imaging modalities, the most common being MRI and CT \cite{jiang2020unified,yu2023source,zheng2021hierarchical}. Other sources of domain shift include scanner manufacturers or settings, such as the strength of MR field or CT dosage \cite{zheng2021hierarchical,liu2020shape,chen2022maxstyle,gu2021domain,lennartz2023segmentation,se_medim}, and intra-modality shifts, such as T2 to T1 MRI \cite{han2021deep,crossmoda,dann_medim}.
+
+A systematic comparison of these methods, along with the question of the necessity to develop new ones, is complicated by lack of consistency in the usage of datasets across studies, even when addressing similar domain shifts, as shown in Table~\ref{tab:benchmarks}. In addition, many studies test their proposals on a single domain shift problem, limiting the generalizability of their analysis.  
+
+Recently, the Cross-Modality Domain Adaptation (CrossMoDA) challenge \cite{crossmoda}, conducted at MICCAI in 2021 and repeated in 2022 and 2023, attempted to unify various authors under the same framework. The challenge's setup involved training models on annotated MR T1c with access to unannotated T2 studies, followed by testing on T2 studies. The challenge attracted numerous participants, with the top teams achieving near-supervised performance levels using image-to-image translation techniques paired with multi-stage pseudo-labeling.
+
+Despite its success, the CrossMoDA challenge has certain limitations. Firstly, it only considers a single source of domain shift, the MR sequence. Secondly, the segmentation task is confined to a two-class challenge: segmenting the vestibular schwannoma tumor and the cochlea, both located in very specific anatomical regions. Consequently, top-performing solutions managed to close up to a 97\% score gap between domains. Participants employed various task-specific techniques, such as using only the largest connected component of the segmentation mask to enhance segmentation quality. While this approach may be effective for solving a concrete segmentation task, it is counterproductive for assessing the capabilities of DA methods. It obscures the true impact of adaptation to the unseen domain, hindering a clear understanding of the effectiveness of DA techniques.
+
+\textit{Therefore, we conclude that there is a need for a large, diverse, and publicly available benchmark for DA in 3D medical image segmentation that includes a variety of downstream tasks.} We introduce such a benchmark to encourage further progress in developing scalable DA methods.
+
+We include four publicly available datasets, encompassing 22 segmentation tasks. Based on these datasets, we construct eight domain adaptation problems; see visual examples of individual domains in Figure~\ref{fig:teaser2} with the corresponding segmentation masks in Figure~\ref{fig:contours}. Table~\ref{tab:setup} summarizes all proposed problems with their domain shifts and dataset splits.
+
+To establish a baseline and determine which problems remain unsolved with current methods, we implemented core unsupervised DA (UDA) methods for 3D medical image segmentation. Excluding any task-specific assumptions (e.g., filtering the largest connected component) and human-in-the-loop approaches, the best method within our benchmark closes only 62\% of the performance drop between domains on average. Thus, we highlight the need for further development of robust DA methods in 3D medical image segmentation, with our proposed benchmark serving as a strong foundational point for systematically comparing novel methods. We summarize our contributions as follows:
+
+\begin{itemize}
+	
+	\item We propose a benchmark for DA in 3D medical image segmentation that includes eight carefully selected domain shifts based on their practical relevance. These shifts cover variations in imaging modalities, scanner settings, and the presence of contrast agents, ensuring that our benchmark reflects real-world challenges in medical image analysis.
+	
+	\item We provide a comprehensive evaluation of more than ten core domain adaptation methods on our benchmark, covering key categories of UDA approaches. 
+	
+	\item Our benchmark is designed to be economical, utilizing only four publicly available datasets. This allows for testing new methods against a wide variety of problems with minimal resources, making our benchmark accessible to researchers and encouraging wider adoption.
+	
+\end{itemize}
+
+
+\section{M3DA Benchmark}
+%\label{sec:bench}
+
+We consider a semantic segmentation problem of 3D medical images, which we call a downstream task. Any downstream model works with input samples $x \in X$ and the corresponding segmentation masks $y \in Y$, where $X$ and $Y$ are some input image and label spaces. If $x \in \R^{H \times W \times D}$, segmentation mask is of the same spatial size $y \in \R^{H \times W \times D}$, where every element belongs to a predefined set of labels $y^{(h,w,d)} \in \{ 0, 1, \dots, C \}$, $0$ is background and $C$ is the number of foreground classes.
+
+\input{Dissertation/Tables/4_1_benchmarks}
+
+We follow the standard unsupervised domain adaptation (UDA) problem setting, as in \cite{dann}. We assume that two distributions $\mathcal{S}(x, y)$ and $\mathcal{T}(x, y)$ exist on $X \otimes Y$, called \textit{source} and \textit{target} distributions. At the training time, we have a set of source training samples $X^s = \{ x_i^s \}_{i=1}^n$ with the corresponding masks $Y^s = \{ y_i^s \}_{i=1}^n$ and a set of target training samples $X^t_{tr}$ without annotations; source images and masks are considered to be sampled from $\mathcal{S}$, $(x_i^s, y_i^s) \sim \mathcal{S}(x, y)$. Our goal is to predict segmentations $y$ given the input from the marginal distribution of target images, $x \sim \mathcal{T}(x)$. To evaluate algorithms, we have target testing samples $X^t_{ts}$ with masks $Y^t_{ts}$ \textit{available only for evaluation purposes}.
+
+Thus, given domains A and B, one trains a supervised model on domain A while having access to unannotated samples from domain B for adaptation. The goal of UDA is to develop a model that makes accurate predictions on domain B. Importantly, this setup prohibits incorporating annotations from the target domain into the training routine.
+
+
+
+\subsection{UDA Problems Motivation}
+%\label{ssec:constructing}
+
+
+\input{Dissertation/Tables/4_2_datasets}
+
+
+\paragraph{CT \textbf{$\leftrightarrow$} MRI}
+
+First, we include domain shift from MRI to CT and vice versa. Although the use of CT scans is often clinically justified, it is associated with additional risks, such as 
+potentially increasing the risk of cancer \cite{cao2022ct,brenner2007computed}. In contrast, MRI is a safer imaging modality that does not involve radiation exposure \cite{nie2016estimating}. While CT is critical for various clinical applications like radiotherapy treatment planning, there is a recent transition to MRI for these applications \cite{paczona2023magnetic}. Thus, developing algorithms that use decades of collected CT data and adapt them for newly acquired MRI scans is an important avenue of research.
+
+The inverse problem of estimating MRI from CT is also an important application. CT is a much faster imaging modality compared to MRI, making it a better solution in emergency scenarios such as stroke. However, MRI provides more sensitive brain visualization \cite{vymazal2012comparison}. Therefore, having universal algorithms that can adapt to the needed modality at hand is highly beneficial.
+
+While these examples highlight the clinical relevance of domain adaptation between CT and MRI, for the purpose of this benchmark, we utilize a different dataset focusing on thoracic organ segmentation. This choice is motivated by the availability of a dataset that provides both MR and CT images with corresponding segmentation maps for thoracic organs, which is essential for evaluating the performance of UDA algorithms. Despite the difference in the target application, the underlying principles of domain adaptation remain the same, and the insights gained from this benchmark can be applied to various clinical scenarios.
+
+
+\paragraph{CT $\rightarrow$ low-dose CT}
+
+Second, we include a CT to low-dose CT (LDCT) shift, motivated by the increasing popularity of LDCT. LDCT produces images with a lower signal-to-noise ratio but are still diagnostically effective, resulting in several-fold lower radiation dosage exposure compared to regular CT (allowing for screening purposes \cite{lidc,kubo2016standard}), faster scanning time, mobility to scan underserved populations \cite{raghavan2020initial}, and cost-effectiveness \cite{mohammadshahi2019cost}. Similar to the CT $\leftrightarrow$ MRI domain shift, utilizing publicly available annotated regular CT scans can accelerate the development of automated segmentation models for LDCT. As demonstrated in Table~\ref{tab:metrics_pure}, methods trained on regular CT perform poorly on LDCT. This shift is the only one obtained via simulation, where we algorithmically simulate low-dose CT from regular ones.
+
+
+\paragraph{Contrast enhancement $\rightarrow$ no contrast enhancement}
+
+Third, we include two tasks, MRI and CT, involving domain transfer from a contrast-enhanced (CE) image to an image without contrast enhancement (native). CE injection is a labor-intensive step, requiring additional training for personnel and carrying a small but additional risk for patients \cite{andreucci2014side,costelloe2020risks}. Again, we suggest benchmarking DA methods against the scenario where models that utilized richer imaging modalities (CE) during supervised training are adapted for safer modalities (non-contrast-enhanced).
+
+
+\paragraph{MRI settings}
+
+Finally, we include three setups that address the domain shifts caused by variable MRI scanner settings, which are among the most common sources of domain shift encountered in practice \cite{yan2020mri,medim_da_survey_2023}. These setups cover different field strengths (1.5T vs. 3T), different scanner manufacturers, and a combination of both. Domain shifts arising from variations in scanner settings are ubiquitous in multi-source MRI datasets, as differences in field strength and manufacturer-specific acquisition parameters can significantly impact the appearance and quality of the resulting images. Addressing these shifts is crucial for developing robust and generalizable segmentation models that can handle the heterogeneity of MRI data encountered in real-world clinical scenarios.
+
+
+
+\subsection{Datasets selection}
+%\label{ssec:data}
+
+We base the inclusion of datasets into the benchmark on two criteria. \textbf{Relevance}, we aim to cover as many relevant domain shifts as possible; see Section~\ref{sec:da_bench:exp:limitations} for a list of domain shifts not included in our benchmark. \textbf{Scale}, we prefer a dataset with a larger number of samples, when deciding between two datasets that are both relevant and include similar domain shifts. All reviewed and selected datasets are summarized in Table~\ref{tab:datasets}, and all technical details (e.g., links, download instructions, and licenses) are provided in Appendix~\ref{app:m3da_datasets}.
+
+\input{Dissertation/Tables/4_3_setups}
+
+We start by selecting a dataset for MRI to CT conversion. This allows for several alternatives. Many authors use datasets such as BTCV and CHAOS for these tasks, both of which include images of the thoracic region. BTCV consists of 30 CT scans with 13 organ annotations, and CHAOS of 40 MRI and 40 CT scans with 4 organ annotations. Another option is MM-WHS, which consists of 20 MRI and 20 CT scans of the heart with 8 annotated classes. Finally, there is the newer AMOS dataset, which consists of 500 CT and 100 MRI scans with 15 annotated thoracic organs. Following our criteria, we include AMOS as it is the largest option. We also use AMOS to simulate LDCT data.
+
+To cover CE CT to native CT task, we add Lung Image Database Consortium image collection (LIDC) \cite{lidc}. LIDC contains chest CT images with and without contrast enhancement with segmentation annotation of lung nodules. LIDC dataset covers lung nodules - an oncology pathology, one of the most common reasons for using contrast enhancement \cite{purysko2016does}. Then, we cover the similar CE-based data shift in multi-sequence MRI data, from T1 CE to T1 modality. BraTS 2021, being one of the largest and most widely used datasets in the medical imaging community, emerges as the natural choice, satisfying our criteria of relevance, and scale.
+
+Finally, we cover variability in the single-sequence MRI acquisition. As evident from Tables \ref{tab:benchmarks} and \ref{tab:datasets}, common choices are the ACDC and M\&Ms datasets. Both include segmentation classes of the heart and are relatively large, consisting of 150 and 375 annotated samples, respectively. Both have several concretely defined MRI domains (e.g., different scanners, parameters, field strengths). Another option is CC359, which has the same rich variability in MRI parameters and is similarly sized, including 359 annotated samples. Both ACDC and M\&Ms images have $1\times 1\times 9~ \text{mm}^3$ spacing, for which a 2D algorithm would often be a more viable choice. In contrast, a significant advantage of CC359 is the fine-grade and consistent voxel spacing, approximately $1\times 1\times 1~ \text{mm}^3$, which concludes our selection. UDA setups from the selected datasets are summarized in Table~\ref{tab:setup}.
+
+
+\section{Methods for M3DA Benchmark}
+\label{sec:methods}
+
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\columnwidth]{Dissertation/Figures/4_da_bench/uDA_pipeline.pdf}
+	\caption{Overview of the UDA pipeline for semantic segmentation. Some methods does not require Target Domain images during training, e.g., nnAugm, IN, AdaBN.}
+	\label{fig:pipeline}
+\end{figure}
+
+% Since our downstream task is semantic segmentation, a conventional way to solve it is training a convolutional neural network. In particular, U-Net \cite{unet} architecture and its variants are widely adopted in medical image segmentation. We also use an established version of U-Net as a baseline and describe it in Section~\ref{ssec:baseline}. The adaptation to target distribution can be performed in a variety of ways, e.g., transferring images styles between $X^s$ and $X^t_{tr}$ via CycleGAN \cite{cyclegan} or learning domain-invariant features via DANN \cite{dann}. We detail UDA methods included in our benchmark in Section~\ref{ssec:uda}.
+
+
+\subsection{Segmentation baseline and oracle}
+\label{ssec:baseline}
+
+Let $F$ be a segmentation network which takes an image $x \in \R^{H \times W \times D}$ and predicts a soft-segmentation map $p = F(x)$, $p \in \R^{H \times W \times D \times (C + 1)}$. Here, the last layer of $F$ is softmax which outputs a $(C+1)$-dimensional voxel-wise vector $\left[p^{(h, w, d, c)}\right]_c$ behaving as a discrete distribution over classes. The parameters $\theta_F$ of $F$ are learned to minimize some segmentation loss $\mathcal{L}_{seg} (p, y)$. In our case, $\mathcal{L}_{seg}$ is a sum of cross-entropy and Dice losses, as used by default in \cite{nnunet} and many other works. Optimization problem for training on source domain reads:
+
+\begin{equation}
+	\min_{\theta_F} \frac{1}{|X^s|} \sum_{(x, y) \in (X^s, Y^s)} \mathcal{L}_{seg} (F(x), y).    
+\end{equation}
+
+Further, every DA method depends on $F$, i.e., has the same backbone, so the choice of $F$ is crucial for the benchmark construction. We used the nnU-Net \cite{nnunet} architecture, loss function, and training pipeline, since nnU-Net demonstrated the best performance in several relevant tasks \cite{nnunet,amos,isensee2024nnu}, including AMOS and BraTS. We also compared nnU-Net to its closest alternatives, UNETR \cite{unetr}, Swin UNETR \cite{swinunetr}, and MedNeXt \cite{mednext}, directly within our benchmark tasks and confirmed superior nnU-Net performance; see Table~\ref{tab:backbones}.
+
+To conduct an ablation study of normalization techniques and nnU-Net pipeline components, we replaced the default instance with batch normalization layers. We also removed modality-specific preprocessing, postprocessing, and test-time augmentations, so we could assess the unhindered impact of DA methods. A detailed technical description is given in in Appendix~\ref{app:m3da_methods}, Table~\ref{tab:hyper}.
+
+An nnU-Net pipeline with the changes above is a backbone for all further experiments; we call it simply U-Net. Finally, we define two core methods of the M3DA benchmark. \textbf{Baseline} -- U-Net trained on $(X^s, Y^s)$ and tested on $(X^t_{ts}, Y^t_{ts})$, i.e., naive transfer. \textbf{Oracle} -- U-Net trained and tested via cross-validation on $(X^t_{ts}, Y^t_{ts})$ that might be interpreted as an upper bound estimation for DA methods.
+
+Given baseline and oracle scores, the goal of DA methods therefore is to close the gap between them.
+
+
+\subsection{UDA Methods}
+\label{ssec:uda}
+
+In our methods selection, we mainly follow reviews of DA for medical image analysis \cite{medim_da_survey_2021,medim_da_survey_2023}. We include core methods of DA for open-world images, following the corresponding reviews \cite{da_survey_2018,uda_survey_2020,uda_segm_review_2020}, top-performing solutions to the CrossMoDA challenge \cite{crossmoda}, and most recent Domain Generalization methods \cite{dg_tta}, totaling 12 methods.
+
+
+\paragraph{Discrepancy-based approaches} are based on incorporating maximum mean discrepancy measure as a regularization or auxilary loss function \cite{mmd_ghifary2014domain,mmd_tzeng2014deep,mmd_long2015learning}. These approaches were soon surpassed by simpler approximations, such as \text{DeepCORAL}~\cite{deepcoral}. However, all of them become computationally intractable due to significantly larger feature space in 3D segmentation task.
+
+Since batch normalization (BN) \cite{bn} became the standard in DL, it allowed to reduce covariate shift by aligning first and second moments of feature distributions. But it introduced discrepancy between train and test by applying train-estimated statistics to the test samples. Here, \textit{Adaptive BN (AdaBN)} \cite{adabn} recalculates BN statistics on the unlabeled target data, helping to adapt to the target domain.
+
+Contrary, \textit{Instance Normalization (IN)} \cite{instance_norm} was proposed for an efficient image stylization, and it calculates statistics for every input independently. This way IN might help adaptation, so we included IN to test it separately.
+
+\textbf{Selected methods:} AdaBN, IN.
+
+
+\paragraph{Self-training} uses predicted pseudo-labels on the target data to regularize the downstream model. For instance, the authors of \cite{se} proposed \textit{self-ensembling (SE)} for visual DA. The same methodology was implemented for 3D medical image segmentation in \cite{se_medim}. The authors trained the first, student, network on the downstream task and updated the weights of the second, teacher, network via exponential moving average. They additionally imposed a consistency criterion: mean squared error between predictions of the two networks, thus, student network minimizes segmentation and consistency losses. We included SE with hyperparameters recommended in \cite{se_medim}.
+
+Specifically for semantic segmentation, training on self-generated predictions was shown to help in DA \cite{self_training}. Later, the authors of \cite{entropy} noted the connection between self-training and entropy minimization. They also showed that \textit{minimizing the entropy (MinEnt)} of predictions surpasses self-training and other DA methods, so we included MinEnt in our benchmark.
+
+\textbf{Selected methods:} SE, MinEnt.
+
+
+\paragraph{Adversarial-based approaches} form the basis for the most DA methods, as shown in \cite{uda_segm_review_2020}. The central idea is reversing the gradient from the domain classification network, thus learning domain invariant features for source and target inputs. To this end, the authors of \cite{dann} proposed \textit{Domain Adversarial Neural Network (DANN)} for image classification, noting that their approach is generic and can handle any output label space. Consequently, DANN was implemented for DA in 3D medical image segmentation \cite{dann_medim}.
+
+Although many other DANN modifications exist, e.g., decoupling feature encoders for source and target images \cite{adda} or connecting the domain classification network to the output layer \cite{tsai2018learning}, adapting them for 3D segmentation requires a separate effort. Hence, we focused on testing the core method and proceeded with the close to original DANN implementation of \cite{dann_medim}.
+
+\textbf{Selected methods:} DANN.
+
+
+\paragraph{Image-level adaptation} is typically achieved using Generative Adversarial Network (GAN) \cite{goodfellow2020generative}. The goal is to learn a mapping function between the source and target domains with a generator network. Then, one can use this generator to transfer images styles between domains. Specifically for UDA, the authors of \cite{cyclegan} proposed \textit{CycleGAN 2D} which additionally enforces the reconstruction loop consistency upon two generators. This method was also designed for 3D medical images in \cite{cyclegan3d}; and it found numerous successful applications to medical image segmentation, e.g., top-3 solutions of the CrossMoDA challenge \cite{crossmoda} used \textit{CycleGAN 3D}. We included both approaches.
+
+Image-level adaptation also includes non-generative approaches, such as Fourier Domain Adaptation (FDA) \cite{fda}, where the style of images is changed by substituting their low frequencies in Fourier space. The authors of \cite{fda_medim} succeeded in applying FDA to 3D medical image segmentation. However, such methods, similar to CT reconstruction kernel modulation \cite{fbpaug}, are not generic and heavily depend on modality-specific features, so we excluded them from further consideration.
+
+\textbf{Selected methods:} CycleGAN 2D, CycleGAN 3D.
+
+
+\paragraph{Preprocessing and augmentation} are often overlooked when considering DA. On the one hand, we can standardize data characteristics by preprocessing, potentially reducing domain shift. We included two such steps by default: resampling to common spacing and intensity normalization; they are essential for the adequate model training \cite{kondrateva2024negligible}. Many studies demonstrated domain shift in medical images by intensity histograms \cite{crossmoda,se_medim,ihf}. Equalizing this difference might be of interest for adaptation, thus we included \textit{histogram matching (HM)}.
+
+On the other hand, augmentations can expand source distribution, potentially covering the target one. Here, nnUnet framework \cite{nnunet} includes a variety of universal augmentations, so we tested them as a separate method under the name \textit{nnAugm}. We also tested a commonly used and modality-agnostic \textit{gamma correction augmentation (Gamma)} as an ablation study of nnAugm.
+% as in \cite{gamma_example}
+
+Finally, several advanced augmentation techniques were developed for domain generalization purposes. We included the most recent of them, \textit{global intensity non-linear (GIN)} \cite{gin} and \textit{modality independent neighborhood descriptor (MIND)} \cite{dg_tta} augmentations.
+
+\textbf{Selected methods:} HM, nnAugm, Gamma, GIN, MIND.\\
+
+Training details, methods' implementation choices, and a complete list of hyperparameters we provide in Appendix~\ref{app:m3da_methods}.
+
+
+\section{Experiments}
+
+
+\subsection{Backbone selection}
+
+We evaluated four segmentation backbones (U-Net, UNETR~\cite{unetr}, SwinUNETR~\cite{swinunetr}, and MedNeXt~\cite{mednext}) to determine an optimal baseline architecture for our experiments; see Table~\ref{tab:backbones}. For comparison, we included two pretrained models: SAM-Med3D~\cite{sammed} and UniModel~\cite{unimodel}, which are based on UNETR and SwinUNETR architectures, respectively, and used officially published model weights.
+
+\input{Dissertation/Tables/4_4_backbones}
+
+Our analysis of the foundational models (SAM-Med3D and UniModel) finetuned in supervised fashion yielded three key observations. First, both models demonstrated improved performance compared to their respective base architectures (UNETR and SwinUNETR). Second, we observed that both models slightly underperformed in 4 out of 5 MRI tasks compared to their counterparts trained from scratch, potentially due to their pretraining being predominantly conducted on CT data. Third, neither of them surpassed the performance of a standard U-Net trained from scratch.
+
+MedNeXt performed on par with regular U-Net, however failed to converge on LIDC dataset on multiple runs attempts. % for unknown reason.
+Based on these results, we selected the U-Net architecture as our primary backbone.
+
+
+\subsection{Domain Adaptation methods on M3DA}
+
+\input{Dissertation/Tables/4_5_metrics_std}
+
+We evaluated various DA methods on the M3DA benchmark (Table~\ref{tab:metrics_pure}) using multi-class Dice score and the \textit{percentage of performance gap} closed between the Baseline and Oracle setups: $\displaystyle 100\times \frac{\text{Method}_{\text{Dice}} - \text{Baseline}_{\text{Dice}}}{\text{Oracle}_{\text{Dice}} - \text{Baseline}_{\text{Dice}}}$.
+
+Our analysis begins with non-adapted networks (trained solely on source domain) evaluated on target domain images, represented by three baseline models: U-Net, UniModel (SwinUNETR), and SAM-Med3D (UNETR). Standard U-Net without adaptations failed completely on MR $\leftrightarrow$ CT tasks and showed poor performance on CT tasks (low-dose and CE), while maintaining moderate performance on MRI parameter shift tasks. In contrast, generalist models pretrained using contrastive and segment-anything approaches showed slightly inferior performance on MRI tasks but demonstrated remarkable results on CT-related tasks. Notably, UniModel achieved the best overall performance on the CE CT $\rightarrow$ CT task without adaptations, while SAM-Med3D exhibited strong performance on the CT $\rightarrow$ LDCT task. These results constitute, to our knowledge, the first empirical demonstration of zero-shot domain adaptation capabilities in foundational models for 3D medical imaging.
+
+CycleGANs, despite their success in the CrossMoDA challenge, performed relatively poorly in our benchmark, particularly on CT-based tasks. We attribute this underperformance to the increased complexity of full-resolution CT images compared to brain MRI segmentation, including variations in size, localization regions, fine-grained details, and subtle stylistic differences.
+
+Classical visual UDA methods (AdaBN, InstanceNorm, DANN, and Self-En- sembling) consistently outperformed the baseline, demonstrating their robustness across diverse domain shifts. 
+
+Unexpectedly, generic augmentations (nnAugm) and even their subset, Gamma augmentation, outperformed more sophisticated methods on average. This finding strongly suggests the importance of incorporating generic augmentations into DA pipelines, which we explore in the following section.
+
+Finally, recent Domain Generalization methods, GIN and MIND, achieved superior performance on MR $\leftrightarrow$ CT tasks, ranking first and second respectively, with relatively average results across other tasks. We note that these methods were originally developed and evaluated within the MR $\leftrightarrow$ CT setups, so increasing the diversity of a DA benchmark is useful for understanding the true method's capabilities.
+
+Example predictions for different DA methods are provided in Figure~\ref{fig:predicts}.
+
+
+\subsection{Impact of additional augmentations}
+
+\input{Dissertation/Tables/4_6_ablation}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\linewidth]{Dissertation/Figures/4_da_bench/augm.png}
+	\caption{Comparison of DA methods with and without augmentations.}
+	\label{fig:augm}
+\end{figure}
+
+Finally, we systematically evaluated the effect of incorporating nnU-Net augmentations, nnAugm, into each domain adaptation method. Our results demonstrate consistent improvements across most methods (Figure~\ref{fig:augm}) and datasets (Table~\ref{tab:ablation_aug}), with an average increase of 10.3 percentage points in Dice score. These benefits varied significantly across different domain shifts: CT-related tasks showed the most substantial improvements, while MRI-based tasks exhibited more modest gains.
+
+Different methods also showed varying degrees of improvement when supplemented with augmentations. MinEnt demonstrated the most dramatic enhancement, +33.5 percentage points in average gap, making it the best-performing method overall (Figure~\ref{fig:teaser1}). CycleGAN-based approaches also benefited significantly, especially in CT-related tasks. Self-Ensembling, while being the strongest initial method, showed the least improvement from the additional augmentations, suggesting that it might already benefited from the incorporated augmentations by design \cite{se_medim}. Notably, some methods exhibited slight performance degradation on specific tasks, indicating that aggressive augmentation strategies may occasionally interfere with method-specific adaptation mechanisms.
+
+Viewing these results from the alternative perspective, we can consider each method as an additional adaptation strategy applied on top of the strong nnAugm baseline. From this point of view, the marginal benefit of adding sophisticated DA methods to an already well-augmented model is more modest but still significant. The best-performing methods (SE and MinEnt) provide an additional $10$--$15\%$ improvement over nnAugm, demonstrating that DA techniques can capture domain-specific variations that generic augmentations alone cannot address. This suggests that while extensive augmentations should form the foundation of any domain adaptation pipeline, method-specific adaptation mechanisms provide complementary benefits that warrant their inclusion in the final solution.
+
+To conclude, despite significant advances in deep learning over the past decade, our benchmark reveals a concerning trend (Figure~\ref{fig:teaser3}): DA methods for medical image segmentation have shown minimal improvement since 2017, with recent approaches performing comparably or even worse than earlier ones, suggesting that closing the domain gap remains a fundamental challenge that requires radically new approaches.
+
+\begin{figure}
+	\includegraphics[width=\linewidth]{Dissertation/Figures/4_da_bench/cvpr_m3da_methods_timeline.png}
+	\caption{Average performance of domain adaptation approaches on M3DA benchmark; see Table \ref{tab:ablation_aug} for detailed results.}  % objective progress being very little over time
+	\label{fig:teaser3}
+\end{figure}
+
+
+\subsection{Supplementary experimental results}
+
+Firstly, Table~\ref{tab:t1t2_soft_hard} provides the results in four domain shift setups which we excluded from the benchmark. Differences in CT reconstruction kernels were excluded due to relative simplicity (Baseline is only marginally worse than the Oracle, and extensive augmentations almost closes this gap). We also excluded the domain shift between T1 and T2 MRI sequences, because, we were not able to find enough clinical justification for the inclusion.
+
+\input{Dissertation/Tables/4_supp_t1t2_ct_kernels}
+
+
+
+\section{Discussion}
+
+While we focused our computational experiments on unsupervised DA, M3DA also supports other DA frameworks.
+
+\paragraph{Supervised DA} involves having annotated data from source and target domains. It can potentially close the performance gap more effectively, leveraging the explicit knowledge of target domain characteristics. All datasets and samples in M3DA come with segmentation annotations, allowing supervised DA setup.
+
+\paragraph{Source-free DA} In this setting, the model is trained on the source domain and later adapted to the target domain without accessing source data. This approach is particularly relevant in scenarios with privacy concerns. M3DA allows source-free DA by removing the source data during finetuning.
+
+\paragraph{Test-time DA} focuses on adapting the model during inference. This method adjusts to the target domain using only the data available at the inference time. Similar to source-free DA, one can limit access to the source domain and use online sampling of the target data.
+
+\paragraph{Domain Generalization (DG)} aims to learn domain-invariant features from multiple source domains without accessing any target domain data during training. This approach is particularly valuable in medical imaging where encountering completely new domains is common, such as images from different hospitals or scanner manufacturers. M3DA's diverse collection of datasets from various medical centers and imaging protocols\footnote{LIDC is sourced from seven academic centers and eight medical imaging companies, BraTS is sourced from at least nine different clinical centers, AMOS was collected in two medical centers, from eight different scanners} makes it well-suited for developing and evaluating DG methods.
+
+These alternative DA frameworks showcase the versatility of our benchmark and its potential to support a wide range of research questions and methodologies in the field of domain adaptation for medical image segmentation.
+
+
+\subsection{Limitations and Future Directions}
+\label{sec:da_bench:exp:limitations}
+
+While we incorporate a diverse set of domain shifts, our benchmark is not exhaustive. We exclude several candidate domain shifts due to their simplicity, low relevance, or lack of available public data. First, the CT reconstruction kernel (from sinogram space to voxel space) is an important parameter. As shown in \cite{fbpaug}, this problem can be largely mitigated via simple augmentations or an auxiliary loss function \cite{shimovolos2022adaptation}. We include our results on this shift in Supplementary materials, but as it is almost fully addressed by simple augmentations, we exclude it from the main benchmark. Also, public datasets containing both reconstruction kernel information and segmentation annotations are scarce.
+
+Second, the CC359 dataset consists of data from six distinct domains, allowing for 30 different domain shift scenarios. We selected the three least ``solved'' shifts based on our preliminary analysis. A complete table with results on all 30 domain pairs is provided in Appendix~\ref{app:m3da_datasets}, Table~\ref{tab:wmgmcsf}.
+
+Third, a common critique of the BraTS dataset is that it is heavily preprocessed. Incorporating raw datasets could provide an evaluation of DA methods in a more realistic setting. However, this comes with an inevitable trade-off of added complexity in data preparation. Addressing this issue specifically, we collected and published the BGP dataset~\cite{Zolotova2023Burdenko}, see Section~\ref{sec:da_bench:bgpd} below.
+
+% We also exclude the MRI T1 to T2 domain shift from the main paper. Although we provide the results for this setup in Supplementary materials, we did not find sufficient evidence to support its clinical relevance, leading to its exclusion from our benchmark.
+
+Finally, while the LIDC dataset allows for the CE CT to CT shift, it is primarily designed for object detection tasks, with multiple nodules per image. Despite this limitation, LIDC remains the only publicly available dataset of sufficient size that enables this clinically relevant domain shift.
+
+Future work should focus on expanding M3DA to include more clinically relevant domain shifts, incorporating datasets with unprocessed scans, and exploring novel approaches to domain adaptation.
+
+
+\section{Burdenko's Glioblastoma Progression Dataset}
+\label{sec:da_bench:bgpd}
+
+As we have shown, many researchers develop DA methods tailored to specific types of domain shifts, which limits their ability to generalize across other clinically relevant variations. Even when a method demonstrates uniformly strong performance within the proposed M3DA benchmark, its effectiveness should be validated on a diverse and clinically representative dataset. As an example, one might take the glioblastoma segmentation task, where data is inherently heterogeneous, originating from scanners with different imaging protocols, manufacturers, and varying clinical objectives.
+
+There is an increased interest in automating brain glioma segmentation, facilitated by a BraTS competition~\cite{brats}, whose organizers published pre-operative images of about 2000 subjects with manual (and semi-automatic) segmentation maps of tumor core, enhancing tumor and peritumoral edema, since 2014. Concurrently, there are almost no annotated data collections for contouring gross tumor volume (GTV) on MRI for radiotherapy planning~\cite{menze2021analyzing}. All publicly available datasets are of a small scale of the order of a few dozen patients. Our study is going to partially close this gap.
+
+Furthermore, to highlight difficulties in applying existing algorithms to a related (but a different) task, we demonstrate the performance of competition-winning solutions on a new domain. We assess the complexity of the GTV contouring task by benchmarking five award-winning solutions (in different years) of the BraTS competition on our dataset~\cite{kofler2020brats,isensee2018nnu,kickingereder2019automated,bakas2017advancing}. All algorithms show a significant deterioration in the performance compared to the original task, ranging between 0.40 up to 0.70 Dice score on the GTV annotation task (compared to 0.79 up to 0.90 on the original pre-operative images). This result indicates that although the problems are related (same pathology, same image modalities, same algorithm), solving one does not solve the other.
+
+
+So we publish the Burdenko's Glioblastoma Progression (BGP) dataset, a systematic data collection of pre-radiotherapy MRI images of 180 patients with primary glioblastoma who undergo treatment at the Burdenko National Medical Research Center of Neurosurgery from 2014 to 2019. For each patient, the dataset includes imaging studies conducted for radiotherapy planning and follow-up studies. The radiotherapy studies consist of 4 MRI sequences (T1, T1C, T2, FLAIR), a topometric CT scan, and associated radiotherapy planning files (RTSTRUCT, RTPLAN, and RTDOSE). Follow-up studies (from 1 to 8-time per patient) include 2-4 MRI sequences (with a minimal set of T1C and FLAIR) per patient. See data examples in Figure~\ref{fig:gbpd}. %Additional genetic information and a treatment response status (tumour progression, tumour pseudoprogression, treatment response) are available for a subset of patients.
+
+\begin{figure}
+	\includegraphics[width=\linewidth]{Dissertation/Figures/4_da_bench/Burdenko-GBM-Progression-scaled.jpg}
+	\caption{A data sample from the Burdenko's Glioblastoma Progression dataset.}
+	\label{fig:gbpd}
+\end{figure}
+
+
+The MRI studies were obtained from different sites, with scanners from four vendors and varying scanning protocols. %CT studies were obtained using a unified scanning protocol.
+By introducing the BGP dataset, we provide, among other contributions, a realistic ``in-the-wild'' domain adaptation setup, where segmentation models must generalize across diverse acquisition conditions and clinical scenarios.
+
+
+\section{Summary}
+
+In this chapter, we introduced the M3DA benchmark for unsupervised domain adaptation in 3D medical image segmentation. Addressing the widely indicated need for developing DA methods in the medical imaging domain, as emphasized in recent literature~\cite{gulrajani2020search,uda_survey_2020,zhuang2020comprehensive,peng2018visda,zhang2021empirical}, we created a large-scale benchmark to facilitate the development of robust segmentation methods in such a crucial application area. Contrary to previously used setups, we covered a diverse set of domain shift sources while using large, publicly available datasets.
+
+We benchmarked the core adaptation methods, covering all key categories of unsupervised DA approaches \cite{medim_da_survey_2021,medim_da_survey_2023}, and medical foundational models. Our results revealed that adapted segmentation models struggle to generalize beyond their training distribution when tested at scale. Although some DA methods showed promise in particular settings, we revealed they might completely fail in a number of other setups. This highlights a pressing need for creating robust methods for medical image segmentation, and we hope to foster research efforts in improving adaptation methods’ performance in diverse situations.
+
+To further support research in clinically relevant and scalable DA, we introduced and published the Burdenko's Glioblastoma Progression (BGP) dataset, a data collection of pre-radiotherapy MRI studies from multiple clinical sites. The dataset reflects real-world imaging heterogeneity, including scans from four different MRI vendors with varying protocols. Our evaluation of state-of-the-art glioblastoma segmentation models demonstrated a substantial performance drop when applied to this heterogeneous data. Thus, the BGP dataset provides an essential realistic ``in-the-wild'' DA setup, bridging the gap between methodological research and practical deployment.
+
+
+Finally, we suggested various alternative problem settings within the M3DA benchmark, such as supervised and test-time DA. These settings allow for the evaluation of more complex hypotheses across a broader spectrum of DA methods, encouraging further research into improving adaptation performance in diverse medical imaging contexts.
+
+
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\linewidth]{Dissertation/Figures/4_da_bench/preds.png}
+	\caption{Example predictions for different DA methods. Methods are in rows, starting with ground truth in a first row. All eight benchmark tasks are in columns.}
+	\label{fig:predicts}
+\end{figure}
+
+

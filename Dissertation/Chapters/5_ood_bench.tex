@@ -1,0 +1,344 @@
+
+
+\chapter{Benchmark for OOD in 3D Medical Image Segmentation}
+\label{chap:ood_bench}
+
+
+Deep Learning (DL) models perform unreliably when the data come from a distribution different from the training one. Above, we have investigated adaptation to the different data distribution, assuming the latter is predefined. In this chapter, we complement our investigation with the detection of novel data distributions. Out-of-distribution (OOD) detection methods help to identify novel data samples with a possibility to prevent erroneous predictions instead of marginally improving performance in the case of adaptation. So we investigate OOD detection effectiveness when applied to 3D medical image segmentation. We designed several OOD challenges representing clinically occurring cases and found that none of the methods achieved acceptable performance. We released the designed challenges as a publicly available benchmark and formulated practical criteria to test the generalization of OOD detection beyond the suggested benchmark.
+
+%In critical applications such as medical imaging, out-of-distribution (OOD) detection methods help to identify such data samples, preventing erroneous predictions. So we investigate OOD detection effectiveness when applied to 3D medical image segmentation. We designed several OOD challenges representing clinically occurring cases and found that none of the methods achieved acceptable performance. Our findings highlight the limitations of the existing OOD detection methods with 3D medical images and present a promising avenue for improving them. To facilitate research in this area, we release the designed challenges as a publicly available benchmark and formulate practical criteria to test the generalization of OOD detection beyond the suggested benchmark.
+
+% Methods not dedicated to segmentation severely failed to perform in the designed setups; the best mean false-positive rate at a 95\% true-positive rate (FPR) was 0.59. Segmentation-dedicated methods still achieved suboptimal performance, with the best mean FPR being 0.31 (lower is better). To indicate this suboptimality, we developed a simple method called Intensity Histogram Features (IHF), which performed comparably or better in the same challenges, with a mean FPR of 0.25.
+%  We also propose IHF as a solid baseline to contest emerging methods.
+
+
+\section{Introduction}
+
+In recent years, deep learning (DL) methods have achieved human-level performance in automated medical image processing. However, the development of these methods on a large scale is slowed by several factors. One such factor is the unreliable performance of DL models when the data come from a distribution different from the training one \cite{wang2018deep}. These differences are common in medical imaging: population, demographic, or acquisition parameter changes or new imaging modalities.
+
+Out-of-distribution (OOD) detection helps to identify the data samples with such differences, hence increasing the reliability and safety of a DL model. For instance, detected cases could be marked as rejected, preserving the model performance, or reported to the experts, preventing the model from failing silently. The ability to report or reject unreliable cases is now considered a necessary capability to enable safe clinical deployment \cite{kompa2021second}.
+
+% for X-Rays \cite{berger2021confidence}, skin cancer photos \cite{pacheco2020out}, axial slices of brain MRI \cite{mahmood2020multiscale}
+OOD detection with natural images is a well researched area \cite{yang2024generalized} where several established benchmarks \cite{hendrycks2016baseline,basart2022scaling} facilitate its development. Moreover, these methods directly scale to 2D medical images, resulting in multiple algorithms \cite{mahmood2020multiscale,pacheco2020out,berger2021confidence} and also a benchmark \cite{cao2020benchmark}. At the same time, OOD detection with 3D medical images remains poorly explored, although 3D medical image segmentation is one of the most addressed tasks in medical imaging \cite{litjens2017survey} with outstanding practical usefulness; e.g., quantifying anatomical structures, pathologies, or important biomarkers.
+
+The primary cause of this poor exploration is the lack of datasets and benchmarks with a correct problem design. For example, one party may use private data \cite{karimi2022improving}, while another simulates synthetic anomalies that are unlikely to occur in clinical settings \cite{david_zimmerer_2022_6362313}. A study can be limited to a single distribution shift (e.g., changes in the scanning location \cite{karimi2022improving}), thus lacking the diversity of setups. Also, studies may be restricted to uncertainty estimation~\cite{lambert2022improving} or anomaly detection \cite{david_zimmerer_2022_6362313} methods, leaving the full spectrum of approaches uncovered. Such issues limit the fair comparison of the proposed approaches.
+
+% correct methodology / problem setting
+In this chapter, we investigate the effectiveness of OOD detection when applied to 3D medical image segmentation, closing the outlined gaps in prior work. To enable a correct comparison, we thus designed a \textit{diverse} set of challenges using \textit{publicly available data} with a \textit{downstream segmentation task} and simulation of \textit{clinically occurring anomaly sources}. Besides the problem design, such a study requires appropriately selected state-of-the-art methods. We note that several areas (e.g., anomaly detection and uncertainty estimation) share motivation and methodology with OOD detection. Therefore, we review all related areas and, in contrast to the previous works, present complete methodological coverage.
+
+Extensive evaluation of six selected methods resulted in our main conclusion: state-of-the-art OOD detection falls short of achieving optimal performance with 3D medical images. We show that the methods not designed for segmentation completely failed in most setups, scoring from $0.84$ to $0.59$ for the false-positive rate (FPR) on average, which was not far below the $0.95$~FPR of the random guessing (a lower FPR is better.) Two methods specifically designed for 3D segmentation achieved $0.38$ and $0.31$ mean FPRs, further reducing the error by about two times. At the same time, we show that these errors can be reduced even further with a simple approach.
+
+We show this space for improvement by developing a histogram-based method called Intensity Histogram Features (IHF). IHF achieved comparable and often superior results to its competitors, with a $0.25$ mean FPR. It also scored $0$ for the FPR in multiple challenges, indicating that the distribution shifts in 3D medical imaging can often be detected using image intensity histograms, while the DL-based methods overlook this domain feature. Therefore, we consider current DL-based OOD detection to be far from unveiling its full potential and assume it can be further improved.
+% method as a part of methodology
+% For example, we can incorporate the histogram information into the network.
+
+Given IHF's negligible computational costs compared to DL, we suggest it as a baseline to contest the emerging OOD detection methods. Furthermore, we propose using the designed challenges as a benchmark for developing new methods. Correct problem setting; in-depth analysis with simple methods, such as IHF; and ablation studies with synthetic data confirm that our benchmark makes it possible to estimate the quality of implementing general OOD detection instead of classifying a priori known anomaly types. Thus, summarizing our contributions, we outline the following:
+% or a starting point to create a more refined one
+
+\begin{enumerate}	
+	\item We demonstrate the severe limitations of the existing OOD detection methods with 3D medical images.% and indicate a space for improving them.	
+	\item We designed and now release the corresponding benchmark that can be used as a starting point for related research. % formulate practical criteria
+	\item We propose a method, IHF, and suggest it as a solid baseline for OOD detection with 3D medical images.% and a resource-efficient tool for analyzing related datasets. 	
+\end{enumerate}
+
+%Below, we describe the data used in our study and the problem setup (Section~\ref{sec:data}). Then, we review and select state-of-the-art and core methods from the related fields and also detail IHF (Section~\ref{sec:methods}). Finally, we present the results (Section~\ref{sec:results}) and discuss the limitations and implications of our study (Section~\ref{sec:discussion}).
+
+
+\section{Data}
+
+In contrast to the fields of 2D natural and medical images, no established OOD detection benchmark with a correct problem setting exists for 3D medical images. For example, Karimi et al. \cite{karimi2022improving} used a variety of brain and abdominal CT and MRI datasets but included private ones. The authors also studied only a single distribution shift, changes in the scanning location, which did not allow the estimation of the general performance. Zimmerer et al. \cite{david_zimmerer_2022_6362313} created an OOD detection challenge by simulating synthetic anomalies in brain MR and abdominal CT images. However, their setup lacks a downstream task (e.g., segmentation), so the study is limited to unsupervised anomaly detection methods. Synthesis of local corruptions, as in \cite{david_zimmerer_2022_6362313}, can also lead to evaluation biases, which we show with our analysis. On the other hand, Lambert et al. \cite{lambert2022improving} included datasets with a segmentation task but limited the considered methods to supervised uncertainty estimation.
+
+Given the disagreement of setups, partial problem coverage, or privacy, we designed the OOD detection challenges from scratch following three core principles:
+
+\begin{itemize}
+	
+	\item We included two large \textit{publicly available} CT and MRI in-distribution (ID) datasets to cover the most frequent volumetric modalities.
+	
+	\item We ensured both datasets had \textit{a downstream segmentation task}, allowing us to use the full spectrum of methods.
+	
+	\item We selected \textit{diverse} OOD datasets that simulated the \textit{clinically occurring sources of anomalies}: changes in acquisition protocol, patient population, or anatomical region. All these datasets are publicly available.
+	
+\end{itemize}
+
+We also synthesized several medical imaging artifacts as anomaly sources. Generating synthetic anomalies is a popular approach, applied for 3D images \cite{david_zimmerer_2022_6362313,lambert2022improving} as well as 2D images \cite{hendrycks2016baseline,basart2022scaling}; this approach also allowed us to conduct controlled ablation studies at different distortion levels.
+
+%We made the resulting benchmark publicly available ({\url{https://github.com/francisso/OOD-benchmark}}, last accessed 13.09.23).
+All related CT and MRI datasets and the problem setting are detailed below.
+
+
+\subsection{Lung Nodules Segmentation}
+
+We constructed a total of 6 challenges on CT data, including two synthetic ones. We give visual examples of data samples in Figure~\ref{fig:ct} and detail the ID dataset and every setup below. Segmentation quality of the downstream model is provided in Table~\ref{tab:segm_ct}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/ct_examples_2.pdf}
+	\caption{Examples of CT images (representative axial slices) from different simulated OOD sources in our benchmark.}
+	\label{fig:ct}
+\end{figure}
+
+\input{Dissertation/Tables/5_1_ood_ct}
+
+\paragraph{ID dataset}
+As an ID dataset, we used LIDC-IDRI \cite{lidc}. It contains 1018 chest CT images with the lung nodules segmentation task. We removed cases without nodules since they do not contribute to training a segmentation model. Then, we randomly split the remaining 883 images 4:1 into the train and test, stratified by the number of nodules.
+
+\paragraph{OOD source: \textit{scanner}}
+To simulate a covariate shift, we selected Cancer500 \cite{morozov2021simplified} which has the same downstream task as the ID dataset but is obtained with different scanners and acquisition protocols. It contains 979 chest CT images. We excluded images with low resolution (less than 64 axial slices) and no annotated nodules, resulting in 841 images left.
+
+\paragraph{OOD source: \textit{population}}
+To simulate a patient population shift, we used two datasets with similar semantic content but a different downstream task. These datasets are Medseg9 ({\url{https://radiopaedia.org/articles/covid-19-3}}, last accessed 13.09.23) and MIDRC \cite{tsai2021rsna}, containing 9 and 154 chest CT images, respectively, with COVID-19 cases. Excluding all non-COVID cases, the merged dataset has 120 images.
+
+\paragraph{OOD source: \textit{location (liver)}}
+To simulate a semantic shift, we selected a dataset of the same modality but a different body region. Here, we used LiTS \cite{bilic2023liver}, a dataset with 201 abdominal CT images.
+
+\paragraph{OOD source: \textit{location (head)}}
+Similarly, we included CT-ICH \cite{hssayeni2020computed}, a dataset with 75 head CT images.
+
+\paragraph{OOD source: \textit{synthetic (image noise)}}
+We simulated local image corruptions by applying damaging transformations to the test cases of the ID dataset. The transformations include blurring, changing image contrast, or inserting Gaussian noise in a randomly selected image crop.
+
+\paragraph{OOD source: \textit{synthetic (elastic)}}
+We simulated tissue anomalies by applying an elastic transform of random severity.
+
+
+\subsection{Vestibular Schwannoma Segmentation}
+
+We constructed a total of 7 challenges on MRI data, including four synthetic ones. We give visual examples of data samples in Figure~\ref{fig:mri} and detail every setup below. Segmentation quality of the downstream model is provided in Table~\ref{tab:segm_mri}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/mri_examples_2.pdf}
+	\caption{Examples of MRI images (representative axial slices) from different simulated OOD sources in our benchmark.}
+	\label{fig:mri}
+\end{figure}
+
+\input{Dissertation/Tables/5_2_ood_mri}
+
+\paragraph{ID dataset}
+As an ID  dataset, we used VS-Seg \cite{shapey2021segmentation}. It contains 242 brain T1c MRIs with the vestibular schwannoma segmentation task. We removed cases with empty target masks and split the remaining 239 images 2:1 into the train and test.
+
+
+\paragraph{OOD source: \textit{scanner}}
+To simulate a covariate shift, we selected data with the same semantic content and downstream task but obtained with different scanners and acquisition protocols. Here, we chose CrossMoDA ETZ as a subset of the CrossMoDA 2022 Challenge dataset \cite{reuben_dorent_2022_6504722} with $105$ brain T1c MR images and used it without changes.
+
+
+\paragraph{OOD source: \textit{population (glioblastoma)}}
+To simulate a patient population shift, we used EGD \cite{van2021erasmus}, a dataset with 774 brain MRIs of four modalities (FLAIR, T1, T1c, T2) with a glioma segmentation task. We reduced covariate shift by using only the T1c modality from the Siemens Avanto 1.5T scanner, as in VS-Seg, resulting in 262 selected images.
+
+
+\paragraph{OOD source: \textit{population (healthy)}}
+Additionally, we simulated a patient population shift using healthy cases instead of changing the pathology. We used the CC359 \cite{souza2018open} dataset with 359 brain MR images of the T1 modality. We note, however, that CC359 images differ in vendor and scanning protocol and do not contain contrast enhancement, so this setup has a secondary OOD source, a covariate shift.
+
+
+\paragraph{OOD source: \textit{synthetic (K-space noise)}}
+We synthesized MR imaging artifacts, known as Herringbone artifacts, at different magnitudes. It resulted in visible spikes across the whole image due to anomaly points in the K-space. 
+
+
+\paragraph{OOD source: \textit{synthetic (anisotropy)}}
+We synthesized the wrong resolution by downsampling the image and upsampling it back along one randomly chosen axis.
+
+
+\paragraph{OOD source: \textit{synthetic (motion)}}
+We synthesized two types of MR imaging artifacts that can happen due to the patient's motion. One is ghosting, which appears as shifted copies of the original image; the other exploits \texttt{RandomMotion} simulation from the \texttt{torchIO} library \cite{torchio}.
+%MDPI: Please check if the format should be retained % Authors: confirmed
+
+
+\paragraph{OOD source: \textit{synthetic (image noise)}}
+The same pipeline as for CT images.
+
+
+\subsection{Problem Setting}
+
+We define the OOD detection problem as a classification between samples from a source distribution (ID) and abnormal samples from a novel different distribution (OOD). The core assumption is that the abnormal sample distribution is unknown and cannot be computed in advance. Thus, we approximate the anomaly distribution by constructing diverse setups representing clinically occurring cases. Consequently, a reliable method must generalize to novel sources of anomalies besides attaining the desired accuracy on the suggested test set.
+
+Providing a downstream segmentation task, we removed any constraints on the method design. One can use the model's features, uncertainty estimates, or an auxiliary model to detect outliers. In all cases, a method should output a single number called the \textit{OOD score} for every testing image; a higher score means a higher outlier likelihood.
+
+
+\section{Methods}
+
+\subsection{Methods Selection}
+
+Several sub-topics, including anomaly detection (AD), novelty detection, uncertainty estimation (UE), and outlier detection, share motivation and methodology with OOD detection. Despite subtle differences between these topics, the approaches are similar, and most of them can be applied for OOD detection with minimal changes, as shown in \cite{yang2022openood}. So, we followed the structure of \cite{yang2022openood} and selected core methods from OOD detection, UE, and AD. In our selection, we prioritized methods already implemented for medical imaging (e.g., in \cite{karimi2022improving,jungo2019assessing,zimmerer2022mood}).
+
+As a universal baseline, the maximum probability of a softmax output can be used to detect OOD samples without any model modifications \cite{hendrycks2016baseline}. In practice, however, the entropy of the softmax output (\textbf{Entropy}) is used instead \cite{jungo2019assessing,karimi2022improving,mehrtash2020confidence}. We consider Entropy a starting point for all other approaches and show its performance in our benchmark.
+
+The softmax entropy captures the total uncertainty, while the OOD measure corresponds only to the epistemic uncertainty, as explained in \cite{smith2018understanding}. Thereby, one can use epistemic uncertainty estimation techniques to improve over Entropy. Among the others, Deep \textbf{Ensemble} \cite{lakshminarayanan2017simple} is considered the state-of-the-art approach for UE. To use Ensemble, one computes mutual information or variance over several predictions for a single image to obtain an epistemic uncertainty map. An alternative way to obtain multiple predictions is Monte-Carlo dropout (\textbf{MCD}) \cite{gal2016dropout}, which we also included in our comparison.
+
+Further, we included the approach of \cite{karimi2022improving}, which directly addresses OOD detection on 3D medical images. The authors applied singular value decomposition (\textbf{SVD}) to the network features and used the singular values as image embeddings. OOD score is then the distance from a sample's embedding to its nearest neighbor in the training set.
+
+Better uncertainty estimates can be obtained by modifying the downstream model, although such modifications can harm the model's performance. We included one popular modification, generalized ODIN (\textbf{G-ODIN}) \cite{hsu2020generalized}, in our study. Finally, one can use an auxiliary model dedicated solely to anomaly detection. Such AD methods were extensively compared in the Medical Out-of-Distribution (MOOD) challenge \cite{david_zimmerer_2022_6362313}. We implemented the best solution from MOOD 2022 and included it in our experiments as \textbf{MOOD-1}.
+
+Discussing the auxiliary AD models, we intentionally excluded the reconstruction-based methods (e.g., auto-encoders, generative-adversarial nets) from our consideration. Firstly, these methods performed substantially worse in MOOD 2022 than self-supervised learning-based ones (e.g., MOOD-1) \cite{zimmerer2022mood}. Liang et al. \cite{liang2023omni} also showed them to score far behind self-supervised learning. Moreover, Meissen et al. \cite{meissen2022pitfalls} highlighted the severe limitations of auto-encoders applied to OOD detection in a similar setup. Given this critique, we do not include the reconstruction-based approaches in our experiments.
+
+So, we consider the following methods: Entropy, Ensemble, MCD, SVD, G-ODIN, and MOOD-1. Since some of them are designed for the downstream classification task, we detail their adaptation to segmentation below.
+
+
+\subsection{Methods implementation}
+
+To preserve a fair comparison, we added only trivial and unavoidable modifications. We also tested (in preliminary experiments) any additional component or a critical hyperparameter of every method and selected the best-performing setting.
+
+% \reconsider{Further, to compute an image-level score, one need to aggregate this values. We utilize average score over the predicted foreground as suggested in \cite{Mehrtash_2020} and later confirmed by \cite{karimi2022improving} for calculating image-level uncertainty.}
+
+\paragraph{Entropy}
+Our downstream task is binary segmentation, where the sigmoid function is applied to the network's outputs. We note that two-classes softmax can be derived from the sigmoid. Then, Entropy follows the implementation from \cite{mehrtash2020confidence,karimi2022improving}, computing the average entropy value over the predicted area (i.e., positive class). We set the OOD score to 0 in the case of the empty predicted mask.
+
+\paragraph{Ensemble}
+We trained 5 U-Net models with different initializations and calculated the uncertainty map as the voxel-wise standard deviation of the five corresponding predictions. OOD score is the average of this uncertainty map.
+
+\paragraph{MCD}
+We implemented MCD by introducing a dropout layer before every down- and up-sampling U-Net layer. Then, we calculated voxel-wise standard deviations of 5 inference steps with a dropout rate of 0.1. OOD score is the average of the resulting uncertainty map.
+% We can use different aggregations such as variance, average entropy, or BALD (mutual information) as suggested in \citep{houlsby2011bayesian}.
+% thus, we use only 3 models.
+% such aggregation performed better than BALD \citep{houlsby2011bayesian} in our experiments
+
+\paragraph{SVD}
+We followed \cite{karimi2022improving} without any changes.
+
+\paragraph{G-ODIN}
+We preserved the original structure of the G-ODIN output layer \cite{hsu2020generalized}; the only difference was that we substituted the linear layers with the convolution ones. These convolution layers had kernels of size $1^3$, so the procedure remained equal to the classification of every voxel. Then, we used the best-reported \texttt{G-ODIN DeConf-C$^*$} variant to calculate uncertainty. % After averaging the uncertainty map, we compute the OOD score using the same approach as in Volume method.
+% However, the observed OOD score is improper, resulting in OOD values smaller than in-distribution for some challenges. Thus we report sample as OOD if its score is below $\frac{q}{2}$-th percentile of ID scores distribution or above $100 - \frac{q}{2}$-th percentile.
+
+% In Ensemble, MCD, and G-ODIN, computing mutual information or entropy and averaging the uncertainty map over only the predicted area, as in Entropy, harmed the performance. Thus, we computed the average uncertainty over the whole image. % simple
+
+\paragraph{MOOD-1} The best-performing MOOD solutions are trained to segment synthetically generated anomalies in a self-supervised fashion \cite{zimmerer2022mood}. So, our MOOD-1 implementation is based on this cut-paste-segment approach, which won MOOD 2021 \cite{cho2021self}. We then supplemented it with technical improvements from 2022's best solution (team CitAI), such as one-cycle learning and ensembling over five models. The subject-level OOD score is calculated as the mean of the top-100 anomaly probabilities.
+
+\paragraph{Volume Predictor} To demonstrate that some semantic differences might be trivial from the model's perspective but not captured by other methods, we used the total volume of a prediction (positive class) as an OOD score. Since a predicted volume can vary in any direction, we considered the sample an outlier if the volume is below $\frac{q}{2}$-th or above $100 - \frac{q}{2}$-th percentile of the ID, thus retaining $100 - q$ TPR.
+
+
+\subsection{Intensity Histogram Features}
+
+We propose an unsupervised method based on image intensity histograms as embeddings to contest the DL algorithms. Our design is motivated by two other works. Karimi et al. \cite{karimi2022improving} showed that SVD can efficiently reduce full-image-sized network features. We note a space for improvement in their method---one can optimize the choice of the network's layer to apply SVD. Zakazov et al. \cite{zakazov2021anatomy} suggested that the earlier network's layers contain the most domain-specific information. Following the latter suggestion, we hypothesize that we can extract enough domain-specific information directly from the image (i.e., the zeroth network's layer). A histogram is a convenient way to do so.
+
+We schematically present our method, called Intensity Histogram Features (IHF), in Figure~\ref{fig:ihf}. It consists of three steps: (1) calculating intensity histograms of images and using them as vectors, (2) reducing their dimensionality with PCA, and (3) running an outlier detection algorithm on these vectors.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/method-1.pdf}
+	\caption{The proposed OOD detection method, called \textit{Intensity Histogram Features (IHF)}. It consists of three steps: calculating a $m$-dimensional vector as a histogram bin values from the preprocessed image (\textit{Step 1}), fitting and applying \textit{PCA} to the occuring data, and calculating Mahalanobis distance between a test vector and ID samples distribution (\textit{Step 3}). We apply IHF to the 3D images and illustrate the process using 2D axial slices for simplicity. (* PCA is fitted once on all training data.)}
+	\label{fig:ihf}
+\end{figure}
+
+\paragraph{Step 1: preprocessing and histograms} All images undergo the same preprocessing pipeline to standardize the intensity distribution:
+
+\begin{enumerate}	
+	\item We interpolate images to the median ID spacing. So, in all CT and MRI experiments, we use $1 \times 1 \times 1.5$ mm.
+	\item We clip image intensities to $[-1350, 300]$ Hounsfield units for CT (a standard lung window) and [1{th} percentile, 99{th} percentile] for MRI.
+	\item We min-max-scale image intensities to the $[0, 1]$ range.
+\end{enumerate}
+
+Given a preprocessed image $x$, we compute a probability density function of its intensities in $m$ bins, a histogram $e(x) \in \mathbb{R}^m$, and further use these vectors $e(x)$.
+
+\paragraph{Step 2: Principal Component Analysis (PCA)} As an optional step, we use PCA to reduce the dimensions $m$. The main reason to use it is that some outlier detection algorithms at \textit{Step 3} behave unstable in high dimensional spaces. For instance, calculating Mahalanobis distance requires reversing the empirical sample covariance matrix, and this matrix is likely to become ill-conditioned or singular with larger $m$.
+% resulting in the IHF numerical instability
+
+% We use the fitted PCA to transform all training vectors and every incoming testing vector.
+Therefore, we fit PCA$_v$ once on the training data $E_{tr}$ to preserve $v = 99.99\%$ of the explained variance. This way, we eliminate the potential instability and preserve the distribution properties. $E_{tr}$ consists of row-vectors $e(x_{tr})$ for all training images $x_{tr} \in X_{tr}$. Further, we use transformed vectors $\tilde{e}(x) = \text{PCA}_v (e(x))$. %, $\tilde{E}_{tr} = \text{PCA}_v (E_{tr})$.
+
+\paragraph{Step 3: OOD detection algorithm}
+% During training, we have only in-distribution samples $X_{train}$. We calculate embeddings $e(x_{tr}) \in \mathbb{R}^m$ for all images $x_{tr} \in X_{train}$ as described in Step 1. For a testing sample $x$, we calculate its embedding $e(x)$ the same way. \reconsider{Note that we use the same notations $e(x_{tr})$ and $e(x)$ if we apply PCA at Step 2; however, we keep in mind that $e(x) \in \mathbb{R}^n$ in this case, where $n \leq m$.}
+
+To calculate an OOD score for $x$, we can apply any distance- or density-based outlier detection method. As in \cite{lee2018simple}, we can calculate Mahalanobis distance $S_{Mah}(x)$: 
+% So we calculate the final OOD score $s(x)$ using Mahalanobis distance, which measures the distance between a test sample and the training distribution:
+
+\begin{equation}
+	\label{eq:mah}
+	S_{Mah}(x) = \sqrt{ \left( \tilde{e}(x) - \hat{\mu} \right)^T \hat{\Sigma}^{-1} \left( \tilde{e}(x) - \hat{\mu} \right) },
+\end{equation}
+
+\noindent
+where $\hat{\mu}$ and $\hat{\Sigma}$ are the estimated mean and covariance matrix on the training set, $\hat{\mu} = \frac{1}{|X_{tr}|} \sum_{x_{tr} \in X_{tr}} \tilde{e} \left(x_{tr}\right)$ and $\hat{\Sigma} = \frac{1}{|X_{tr}|} \sum_{x_{tr} \in X_{tr}} \left( \tilde{e} (x_{tr}) - \hat{\mu} \right) \left( \tilde{e} (x_{tr}) - \hat{\mu} \right)^T$. 
+% \displaystyle
+Alternatively, one can calculate the distance to the nearest neighbor (min-distance) $S_{NN}(x)$, as in \cite{karimi2022improving}:
+
+\begin{equation}
+	\label{eq:nn}
+	S_{NN}(x) = \min_{x_{tr} \in X_{tr}} || \tilde{e} (x) - \tilde{e} (x_{tr}) ||_2.
+\end{equation}
+
+Using $S_{Mah}$ (Equation~\ref{eq:mah}) and $S_{NN}$ (Equation~\ref{eq:nn}) corresponds to the methods IHF-Mah and IHF-NN, respectively. We included them in our experiments independently.
+
+
+\section{Experiments}
+
+\subsection{Experimental setup}
+
+\paragraph{Downstream task} We have 3D CT and MRI datasets with a segmentation task. So, we adhere to the standard approaches to train a segmentation model in all methods that require the latter.
+
+\paragraph{Data preprocessing} We describe preprocessing in IHF, Step 1; it is the same in all experiments, and it is the minimum allowing the correct DL model training
+
+\paragraph{Architecture and training} In all experiments, we use 3D U-Net \cite{isensee2018no}, a standard architecture for segmentation. We train it on patches of $64$ axial slices, with a batch size of $3$, Adam optimizer, and a learning rate of $10^{-4}$ for $30$ epochs, $1000$ iterations each. In a batch, patches from different images are padded if necessary. We minimize the sum of Binary Cross-Entropy and Focal Tversky losses \cite{abraham2019novel} to achieve high segmentation sensitivity.
+
+\paragraph{Segmentation evaluation} We train all models on the training part of ID datasets. Then, we can evaluate their segmentation quality on the corresponding testing part of the OOD datasets, showing its possible decline. These segmentation results are given in Table~\ref{tab:segm_ct} for the CT and Table~\ref{tab:segm_mri} for the MRI datasets.
+
+\paragraph{OOD detection evaluation} Given the ID test data, we measure the OOD detection quality against it for all the suggested OOD setups, similarly to the classification task. Outliers occur rarely in practice, so we aim to measure detection quality when most ID samples are being preserved w.r.t. relatively rare OOD events. In this case, one of the most convenient classification metrics is the false-positive rate at a 95\% true-positive rate (FPR), so we report FPR as our primary metric in Table~\ref{tab:res_fpr}. We also show AUROC in Table~\ref{tab:res_auroc} for consistency with other studies.
+
+
+\subsection{Experimental results}
+
+In this section, we report on our experiments and results. We start by benchmarking all considered methods, then present the analysis of the benchmark design, and conclude with the ablation study on synthetic data.
+
+Table~\ref{tab:res_fpr} presents the primary results of our study. Uncertainty-based methods, not designed for segmentation, mostly failed in the suggested setups. Entropy, Ensemble, MCD, and G-ODIN gave substantially higher FPR than the other methods, with only G-ODIN slightly surpassing a simple \textit{Volume} predictor. Methods dedicated to segmentation performed better on average. For instance, MOOD-1 achieved 0.36 and 0.41 average FPR on CT and MRI data, respectively. SVD improved further; it appeared to be the only reliable studied method, providing 0.42 and 0.21 mean FPR.
+
+\input{Dissertation/Tables/5_3_res_fpr}
+
+Then, we contested SVD performance by the proposed IHF. In combination with min-distance, IHF-NN provided the best average score across studied challenges: 0.43 and 0.08 FPR, respectively. In combination with Mahalanobis distance, IHF-Mah provided practically worse results in the CT setups. Although IHF-Mah is not the best version, it was historically the first, and we submitted it to MOOD 2022 ($m=150$, no PCA). We placed second as team AIRI (\url{http://medicalood.dkfz.de/web/}, last accessed 13.09.23) with the earliest IHF version, supporting its robustness by the independent evaluation.
+
+We also conducted an ablation study to verify IHF robustness. As shown in Figure~\ref{fig:ihf_hyp}, we tested IHF performance by varying its two parameters, the number of bins ($m$) and explained variance ratio ($v$). Our findings indicated a consistent behavior regardless of the parameter choice, with a slight trend of improved quality at a larger $m$.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/ihf_hyp.pdf}
+	\caption{Dependence of IHF on its two hyperparameters: the number of histogram bins ($m$) and explained variance in PCA ($v$). We give the results for both IHF variants and CT and MRI setups.}
+	\label{fig:ihf_hyp}
+\end{figure}
+
+Both IHF variants performed comparably or better on average than SVD and, consequently, the other studied methods. Therefore, we conclude that the histograms of image intensities are descriptive enough to detect most of the suggested OOD cases. At the same time, neural networks might omit important domain features in this problem. We thus hypothesize that neural networks-based OOD detection can be further improved and leave this promising direction for future research.
+
+We present the same comparison in terms of AUROC in Table~\ref{tab:res_auroc}. Although AUROC is not our primary metric, it roughly preserves the same relative ranking of the studied methods, not contradicting our main message.
+
+\input{Dissertation/Tables/5_4_res_auroc}
+
+
+\subsection{In-depth benchmark analysis}
+
+Further, we emphasize the significance of constructing a \textit{correct} benchmark to study the methods. Analysis of our experimental results suggests the following:
+
+\begin{itemize}	
+	\item OOD methods should be studied under a benchmark with diverse OOD challenges.
+	\item Setups should represent clinically occurring cases.
+	\item Potential biases in the benchmark should be explored using simple methods, such as IHF or Volume predictor.
+\end{itemize}
+
+It is often possible to develop a method tailored to specific OOD sources where it thrives but fails in the other setups. For example, G-ODIN demonstrated near-perfect results in the Population and Scanner setups on MRI data but yielded the worst scores in the others. In practice, however, the precise anomaly source is always unknown, and a general OOD detector with an acceptable average performance is needed. The true method effectiveness can be estimated only in the context of diverse setups.
+
+Secondly, OOD sources should accurately represent or simulate the clinically occurring cases. For instance, the Synthetic (Noise) setup, as introduced in \cite{zimmerer2022mood} and reproduced in our study, is not supported by any medical imaging process. MOOD-1 achieved the highest performance in this setup because its training objective is closely aligned with the anomaly synthesis process. However, performing well in this and similar cases is of no clinical value and, consequently, biases the methods' evaluation towards explicitly unrealistic scenarios.
+
+Finally, our analysis revealed that OOD challenges might contain implicit but trivial features. If a benchmark focuses solely on any such feature, we can design a method that exploits this feature, leading to deceptive conclusions about the generalized performance. Instead, we suggest using simple methods to reveal biased features beforehand. For example, near-perfect IHF results in several setups demonstrated that certain anomalies are actually trivial intensity changes, reinforcing the need to design diverse benchmarks.
+
+To ensure the methods' generalization, we calculate the Fechner correlation between their results and the results of the \textit{simple methods}. We show that, apart from SVD, the others exhibit a weak correlation with the Volume or IHF scores (Table~\ref{tab:res_corr}). So, the examined methods mostly do not rely on trivial features, such as image intensity distribution. However, SVD showed a correlation of 0.54 with the Volume scores, suggesting its hindered generalization on new data sources with a small difference in the predicted area volume.
+
+\input{Dissertation/Tables/5_5_corr}
+
+
+\subsection{Ablation study on synthetic data}
+
+We show the OOD detection results on synthetic data for different distortion levels in Figure~\ref{fig:fpr_sev}. Distortion levels were chosen perceptually from 1 (barely noticeable distortion) to 5 (heavily distorted image). The general trend is that more distorted images are easier to detect. Here, SVD exhibited the steepest average slope and behaved almost linearly with the increasing severity level, suggesting that we have considered challenging but solvable tasks.
+
+Different methods exhibited different sensitivity to the level of distortion required for detection. Entropy and the other UE methods started to operate effectively only at level 3, while IHF detected anomalies at a minimal level. So, we conclude that the methods should be studied across a wide range of anomaly severity levels. Additionally, we show that MOOD-1 depends more on the OOD source than the severity level: it failed in Motion and K-space setups while almost perfectly detecting Noise and Elastic deformations independently of the severity level. Moreover, MOOD-1 and IHF behaved inversely to each other in Noise and Elastic setups. Such diverse behavior suggests the need to study methods across a wide range of anomaly types.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/fpr_sev.pdf}
+	\caption{FPR under synthetically distorted data for every distortion severity level. Blue line indicates method's average trend across presented challenges with 95\% confidence interval. The other UE methods (MCD, Ensemble, and G-ODIN) are excluded since their average trend is similar to Entropy.}
+	\label{fig:fpr_sev}
+\end{figure}
+
+
+\section{Summary}
+
+In this chapter, we have conducted an extensive investigation of OOD detection on 3D medical images. Our results revealed that the established approaches, including uncertainty estimation and anomaly detection, do not provide reliable performance. These methods predicted an unacceptably high number of false positives (0.31 mean FPR at best) and failed to generalize. We also showed that they possess a space for improvement. To do so, we developed a histogram-based method, IHF, that achieved comparable and often superior results to its competitors. Thereby, we indicated that the distribution shifts in 3D medical imaging can often be detected using intensity histograms, while the DL algorithms neglect this domain feature. Although IHF achieved better average results, its performance was surpassed in multiple challenges, emphasizing the need and possibility for developing a robust and general OOD detection method. We constructed and released the corresponding challenges as a benchmark for OOD detection on 3D medical images.%, proposing IHF as a solid baseline to contest new methods.
+
+
+
+
+

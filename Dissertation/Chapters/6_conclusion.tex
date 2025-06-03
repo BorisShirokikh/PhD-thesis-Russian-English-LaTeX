@@ -1,0 +1,62 @@
+\addcontentsline{toc}{chapter}{Conclusions}
+\chapter*{Conclusion}
+
+
+%1. Restate the Research Problem and Objectives
+%Begin by briefly restating the research problem and the primary objectives of your thesis. This reminds readers of the central focus of your work.
+
+% Example:
+% "In this thesis, we addressed the challenge of integrating renewable energy sources into power systems, with a focus on improving reliability and optimizing power flow under uncertainty. Our primary objectives were to develop advanced methods for reliability assessment and to propose novel optimization techniques for chance-constrained optimal power flow."
+
+% 2. Summarize Key Findings
+% Summarize the key findings and contributions of your research. Highlight the most important results and how they address the research problem.
+
+% Example:
+% "Our research led to the development of an adaptive importance sampling method, which significantly improves the accuracy and efficiency of risk estimation for reliability constraints. Additionally, the proposed A-priori Reduced Scenario Approximation (AR-SA) method reduces the number of samples required for reliable solutions in joint chance-constrained dynamic optimal power flow problems. These methods were validated through extensive simulations, demonstrating their effectiveness in handling uncertainties in power systems."
+
+% 3. Discuss the Significance and Impact
+% Discuss the broader significance and impact of your findings. Explain how your research contributes to the field and its potential real-world applications.
+
+% Example:
+% "The findings of this thesis have significant implications for the integration of renewable energy sources into power systems. By enhancing the reliability and efficiency of power system operations, our methods support the transition to sustainable energy solutions, contributing to global efforts to reduce greenhouse gas emissions and improve energy security. Furthermore, the proposed techniques can be applied to other areas of power systems engineering, offering a foundation for future advancements in the field."
+
+% 4. Address Limitations
+% Acknowledge any limitations of your research. Being transparent about the constraints and challenges you encountered adds credibility to your work.
+
+% Example:
+% "While our methods offer substantial improvements, there are limitations to consider. The adaptive importance sampling method relies on accurate physical information, which may not always be readily available. Additionally, the computational complexity of the AR-SA method, though reduced, may still pose challenges for extremely large-scale power systems."
+
+% 5. Suggest Future Work
+% Suggest directions for future research based on your findings. Identify areas that require further investigation and how they can build on your work.
+
+% Example:
+% "Future research could explore the application of the adaptive importance sampling method to real-time power system operations, addressing the challenge of obtaining real-time physical data. Further development of the AR-SA method could focus on enhancing its scalability and applicability to even larger power grids. Additionally, integrating these methods with emerging technologies, such as smart grid systems and advanced forecasting techniques, presents a promising avenue for future work."
+
+
+% 6. Final Thoughts
+% Conclude with a few final thoughts that encapsulate the essence of your research and its potential to inspire further advancements in the field.
+
+% Example:
+% "In conclusion, this thesis contributes to the ongoing efforts to integrate renewable energy sources into power systems more effectively. The developed methods not only address current challenges but also pave the way for future innovations. As the global energy landscape continues to evolve, the insights gained from this research will be instrumental in shaping a sustainable and resilient energy future."
+
+
+In this thesis, we have explored various challenges and developed several methods in domain adaptation (DA) and out-of-distribution (OOD) detection within the context of 3D medical image segmentation. Throughout the chapters, a consistent theme emerges: the critical need to address distribution shifts to improve the reliability and robustness of medical image segmentation models.
+
+% when models are naively transferred across different domains
+Starting with the analysis in Chapter~\ref{chap:mri}, we identified that low-level feature maps are particularly susceptible to domain shifts, leading to significant performance degradation. To mitigate this, we proposed fine-tuning the initial layers of the network, which proved more effective than fine-tuning the entire model, particularly in data-limited scenarios. The development of SpotTUnet further advanced this approach by autonomously determining the most affected layers, enhancing the adaptability of segmentation models across diverse medical imaging tasks.
+
+In Chapter~\ref{chap:ct}, we addressed domain shifts in CT images caused by different reconstruction kernels. We introduced FBPAug, a knowledge-driven augmentation method that improves the consistency of predictions across domains. Additionally, we developed F-Consistency, an unsupervised DA method that leverages paired CT images to achieve superior performance, particularly in challenging COVID-19 segmentation tasks. These methods collectively contribute to creating more robust segmentation models that can generalize better to unseen CT images.
+
+The M3DA benchmark introduced in Chapter~\ref{chap:da_bench} underscored the need for robust domain adaptation in medical imaging. By providing a comprehensive benchmark that covers a wide array of domain shift scenarios, we highlighted the limitations of current unsupervised DA methods, which often struggle to generalize beyond a single setup. The alternative problem settings proposed within M3DA pave the way for future research, encouraging the development of more versatile and resilient segmentation techniques. Complementing this, the BGP dataset offers a clinically realistic domain adaptation scenario with high inter-site variability, bridging the gap between methodological advances and deployment in real-world heterogeneous medical data.
+
+Finally, in Chapter~\ref{chap:ood_bench}, our investigation into OOD detection also revealed the shortcomings of existing approaches, which frequently resulted in high false-positive detection rates and thus poor model's generalization. We developed a simple \linebreak (histogram-based) yet state-of-the-art (two second places in Medical Out Of Distribution Challenge 2022 and 2023 and superior performance in our proposed benchmark) method, called IHF. It could serve as a valuable tool in detecting distribution shifts that deep learning algorithms typically overlook.
+
+In conclusion, this thesis has contributed valuable insights and tools for detecting and addressing domain shifts in 3D medical image segmentation, setting the stage for further advancements in creating reliable, adaptable, and safe medical image segmentation algorithms.
+
+
+% \newpage
+% % \addcontentsline{toc}{chapter}{List of figures}
+% \listoffigures
+
+% % \addcontentsline{toc}{chapter}{List of tables}
+% \listoftables

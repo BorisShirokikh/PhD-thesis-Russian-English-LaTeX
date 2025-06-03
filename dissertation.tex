@@ -78,16 +78,10 @@
 \ifnumequal{\value{contnumtab}}{1}{\counterwithout{table}{chapter}
 }{\counterwithin{table}{chapter}}
 \include{Dissertation/Chapters/2_mri}
-%\include{Dissertation/Chapters/2_mri}
-%\include{Dissertation/Chapters/2_mri}
-%\include{Dissertation/Chapters/2_mri}
-%\include{Dissertation/Chapters/2_mri}
-%\include{Dissertation/power_system}
-%\include{Dissertation/opf}
-%\include{Dissertation/sampling}
-%\include{Dissertation/dc_stochastic_approx}
-%\include{Dissertation/dynamic_stochastic_approx}
-\include{Dissertation/conclusions}      % Заключение
+\include{Dissertation/Chapters/3_ct}
+\include{Dissertation/Chapters/4_da_bench}
+\include{Dissertation/Chapters/5_ood_bench}
+\include{Dissertation/Chapters/6_conclusion}      % Заключение
 \include{Dissertation/acronyms}        % Список сокращений и условных обозначений
 % \include{Dissertation/dictionary}      % Словарь терминов
 \include{Dissertation/references}      % Список литературы
@@ -105,6 +99,7 @@
     \renewcommand\thechapter{\Asbuk{chapter}} % Чтобы приложения русскими буквами нумеровались
 }{}
 
+% TODO: эта залупа ломает нумерацию ссылок. Но так как мне впадлу разбираться, я просто выкинул ее нахуй.
 % \include{Dissertation/appendix}        % Приложения
 
 \setcounter{totalappendix}{\value{chapter}} % Подсчёт количества приложений

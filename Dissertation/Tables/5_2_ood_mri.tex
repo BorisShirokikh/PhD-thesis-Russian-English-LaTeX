@@ -1,0 +1,47 @@
+
+
+%\begin{table}[H]
+%	
+%	\caption{Segmentation
+%		quality in the considered MRI setups in terms of Dice score (DSC, higher is better $(\uparrow)$).}
+%	\begin{adjustwidth}{-\extralength}{0cm}
+%		\centering %% If there is a figure in wide page, please release command \centering
+%		
+%		
+%		%\vspace{.2cm}
+%		{%
+%			\begin{tabularx}{\fulllength}{lCCCCCCCC}
+%				\toprule
+%				\multirow{2}{*}[-0.2em]{\textbf{Metric}\vspace{-12pt}} & \textbf{ID Dataset} & \multicolumn{6}{c}{\textbf{OOD Challenges}} \\
+%				\cmidrule{2-9}
+%				
+%				& \textbf{VS-Seg} & \textbf{Pop (Healthy)} & \textbf{Pop (Glioma)} & \textbf{Scanner} & \textbf{Syn (K-Space)}  & \textbf{Syn (Anisotropy) } & \textbf{Syn (Motion)} & \textbf{Syn (Noise)} \\
+%				
+%				\midrule
+%				DSC $(\uparrow)$ & $0.92 \pm 0.05$ & $0.85 \pm 0.36$ & $0.86 \pm 0.34$ & $0.89 \pm 0.12$ & $0.83 \pm 0.023$ & $0.87 \pm 0.01$ & $0.91 \pm 0.06$ & $0.57 \pm 0.41$ \\
+%				
+%				\bottomrule
+%		\end{tabularx}}
+%	\end{adjustwidth}
+%	\label{tab:segm_mri}
+%\end{table}
+
+
+\begin{table}[h]
+	\centering
+	\caption{Segmentation quality in the considered MRI setups in terms of Dice score (DSC, higher is better $(\uparrow)$).}
+	\resizebox{\textwidth}{!}{%
+	\begin{tabular}{lcccccccc}
+		\toprule
+		\multirow{2}{*}[-0.25em]{\textbf{Metric}\vspace{-12pt}} & \textbf{ID Dataset} & \multicolumn{6}{c}{\textbf{OOD Challenges}} \\
+		\cmidrule{2-9}
+		
+		& \textbf{VS-Seg} & \textbf{Pop (Healthy)} & \textbf{Pop (Glioma)} & \textbf{Scanner} & \textbf{Syn (K-Space)}  & \textbf{Syn (Anisotropy) } & \textbf{Syn (Motion)} & \textbf{Syn (Noise)} \\
+		
+		\midrule
+		DSC $(\uparrow)$ & $0.92 \pm 0.05$ & $0.85 \pm 0.36$ & $0.86 \pm 0.34$ & $0.89 \pm 0.12$ & $0.83 \pm 0.023$ & $0.87 \pm 0.01$ & $0.91 \pm 0.06$ & $0.57 \pm 0.41$ \\
+		
+		\bottomrule
+	\end{tabular}}
+	\label{tab:segm_mri}
+\end{table}

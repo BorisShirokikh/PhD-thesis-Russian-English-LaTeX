@@ -1,0 +1,24 @@
+
+
+\begin{table}[h]
+	\centering
+	\caption{FBPAug comparison results. Numbers are mean (std) obtained on 3-fold cross-validation. Results for \textit{COVID-test} are segmentation Dice score compared with ground truth; results for \textit{Paired-private} are predictions agreement (between paired images) measured using Dice score.}
+	% The best results in each column are shown in bold.
+	\resizebox{\textwidth}{!}{%
+	\begin{tabular}{lccccc}%{| l | c | c | c | c | c |}
+		% \cmidrule(lr){2-5}
+		\toprule
+		& Baseline & FBPAug & Gamma & Noise & Windowing \\
+		
+		\midrule
+		% COVID-test          &$~0.56 ~(0.23)~$  &    $~0.59 ~(0.22)~$&    $\bf~0.61 ~(0.19)~$&    $~0.56 ~(0.21)~$&    $~0.59 ~(0.18)~$\\
+		% Paired-private         &$0.54 ~(0.27)$  &    $\bf0.92 ~(0.05)$&    $0.68 ~(0.21)$&    $0.79 ~(0.13)$&    $0.63 ~(0.23)$\\
+		
+		COVID-test          &$~0.56 ~(0.23)~$  &    $\mathbf{~0.62 ~(0.18)~}$&    $~0.61 ~(0.19)~$&    $~0.56 ~(0.21)~$&    $~0.59 ~(0.18)~$\\
+		Paired-private         &$0.54 ~(0.27)$  &    $\mathbf{0.92 ~(0.05)}$&    $0.68 ~(0.21)$&    $0.79 ~(0.13)$&    $0.63 ~(0.23)$\\
+		
+		\bottomrule
+	\end{tabular}}
+	\label{tab:fbpaug_res}
+\end{table}
+

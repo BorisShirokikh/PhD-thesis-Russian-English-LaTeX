@@ -1,0 +1,39 @@
+
+
+%\begin{table}[H]
+%	\caption{Summary of the datasets with paired images.\label{tab:data_paired}}
+%	\newcolumntype{C}{>{\centering\arraybackslash}X}
+%	\begin{tabularx}{\textwidth}{CCCC}
+%		\toprule
+%		\textbf{Dataset} &\textbf{ Kernel Pair} (\textbf{smooth}/\textbf{sharp}) & \textbf{Training} & \textbf{Testing Pairs }\\
+%		\midrule
+%		\multirow{2}{*}{\makecell{Paired-public \\ \citep{cancer500}}} & FC07/FC55 & 22 & 0 \\
+%		& FC07/FC51 & 98 & 0 \\
+%		\midrule
+%		\multirow{4}{*}{Paired-private} & FC07/FC55 & 60 & 20 \\
+%		& FC07/FC51 & 30 & 11 \\
+%		& SOFT/LUNG & 30 & 10 \\
+%		& STANDARD/LUNG & 30 & 10 \\
+%		\bottomrule
+%	\end{tabularx}
+%\end{table}
+
+
+\begin{table}[h]
+	\centering
+	\caption{Summary of the datasets with paired images.\label{tab:data_paired}}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{c c c c}
+			\toprule
+			Dataset & Kernel pair (\textit{smooth}/\textit{sharp}) & Training & Testing pairs \\
+			\midrule
+			\multirow{2}{*}{\makecell{Paired-public \\ \cite{morozov2021simplified}}} & FC07/FC55 & 22 & 0 \\
+			& FC07/FC51 & 98 & 0 \\
+			\midrule
+			\multirow{4}{*}{Paired-private} & FC07/FC55 & 60 & 20 \\
+			& FC07/FC51 & 30 & 11 \\
+			& SOFT/LUNG & 30 & 10 \\
+			& STANDARD/LUNG & 30 & 10 \\
+			\bottomrule
+	\end{tabular}}
+\end{table}

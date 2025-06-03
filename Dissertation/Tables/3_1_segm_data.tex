@@ -1,0 +1,39 @@
+
+
+%\begin{table}[H]
+%	\centering
+%	\caption{Summary of the segmentation datasets. {\textit{Effective size} means the number of annotated images after appropriate filtering.} \label{tab:data_segm}}
+%	\newcolumntype{C}{>{\centering\arraybackslash}X}
+%	\resizebox{\textwidth}{!}{%
+%	\begin{tabularx}{\textwidth}{CCCCCC}
+%		\toprule
+%		\multirow{1.5}{*}{\textbf{Dataset}} & \multirow{1.5}{*}{\textbf{Source }}& \makecell{\textbf{Effective} \\ \textbf{Size}} & \multirow{1.5}{*}{\textbf{Kernels}} & \multirow{1.5}{*}{\textbf{Annotations}} &\multirow{1.5}{*}{ \textbf{Split}} \\
+%		\midrule
+%		\multirow{4}{*}{COVID-train} & \makecell{Mosmed-1110 \\ \cite{morozov2020mosmeddata}} & 50 & \makecell{unknown \\ smooth} & COVID-19 mask & \multirow{4}{*}{\makecell{5-fold \\ cross-val}} \\
+%		\cmidrule(lr){2-5}
+%		& \makecell{MIDRC \\ \cite{tsai2021rsna}} & 112 & \makecell{B/L/BONE/ \\ STANDARD \\ (smooth)} & COVID-19 mask & \\
+%		\midrule
+%		COVID-test & Medseg-9 & 9 & \makecell{unknown \\ sharp} & \makecell{COVID-19 mask, \\ lungs mask} & \makecell{hold-out \\ test} \\
+%		\bottomrule
+%	\end{tabularx}}
+%\end{table}
+
+
+\begin{table}[h]
+	\centering
+	\caption{Summary of the segmentation datasets.\label{tab:data_segm}}
+	
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{c c c c c c}
+			\toprule
+			Dataset & Source & \makecell{Effective \\ size} & Kernels & Annotations & Split \\
+			\midrule
+			\multirow{2}{*}[-1.5em]{\textit{COVID-train}} & \makecell{\textit{Mosmed-1110} \\ \cite{morozov2020mosmeddata}} & 50 & \makecell{unknown \\ \textit{smooth}} & COVID-19 mask & \multirow{2}{*}[-1.5em]{\makecell{5-fold \\ cross-val}} \\
+			\cmidrule(lr){2-5}
+			& \makecell{\textit{MIDRC} \\ \cite{tsai2021rsna}} & 112 & \makecell{B/L/BONE/ \\ STANDARD \\ (\textit{smooth})} & COVID-19 mask & \\
+			\midrule
+			\textit{COVID-test} & \textit{Medseg-9} & 9 & \makecell{unknown \\ \textit{sharp}} & \makecell{COVID-19 mask, \\ lungs mask} & \makecell{hold-out \\ test} \\
+			\bottomrule
+			
+	\end{tabular}}
+\end{table}
