@@ -1,48 +1,33 @@
-% \chapter*{Abstract}
 
-% Apparently the GOST for dissertations does not include an abstract
 
 \addcontentsline{toc}{chapter}{Introduction}
 \chapter*{Introduction}
 \label{chap:Introduction}
 
 
-%Begin by providing a brief overview of power systems to set the context. Explain why power systems are critical, touching upon their role in modern society, economic importance, and their influence on technological advancements.
 \paragraph{Background.}
 
+The rapid advancements in Deep Learning (DL) have established a strong foundation for automating medical image segmentation tasks~\cite{lee2017deep}. Segmentation algorithms, particularly those based on Convolutional Neural Networks (CNNs), have achieved near human-level performance across a variety of clinical applications, including brain tumor, lung cancer, organ-at-risk, and liver tumor segmentation. These algorithms continue to evolve, offering increasingly accurate results.
 
+In our previous work, we have demonstrated the practical impact of carefully developed DL methods in real clinical workflows. For instance, we contributed to the radiotherapeutic delineation process at the Moscow Gamma-Knife Center by developing a model that provides accurate brain metastases segmentation contours~\cite{shirokikh2022systematic}. Additionally, our work on automatic COVID-19 identification and severity triage has been successfully integrated into the Moscow healthcare system, streamlining patient management~\cite{goncharov2021ct,covid-program}.
 
-A general way to model and quantize uncertainty in an optimization problem is the \emph{Chance Constraints} \cite{geng2019data}. Such kind of constraints allow one to properly incorporate uncertainty into optimization problems and define probability level at which one allows the system to violate constraints. The allowance for original deterministic constraints violation is important to avoid excessive solution conservatism. For example, finding a solution that is robust against each possible realization of uncertainty with unbounded support would result in an empty feasibility set. However, in most cases, chance constraints do not admit a closed-form expression, thus, making it impossible to use them in numerical solvers. These constraints are typically approximated using upper bounds on probability, e.g., Bernstein approximation, \cite{nemirovski2007convex} or using data, i.e., constructing a data-driven approximation. Further, we focus only on the latter type of approximations.
+Despite these successes, the widespread adoption of DL in medical imaging remains hindered by the significant drop in neural network performance when applied to data that differs from the training set. This challenge, known as \textbf{domain shift}, is particularly prevalent in medical imaging due to variations in scanner acquisition parameters, the introduction of new imaging modalities, and differences in patient populations. Our research has highlighted severe performance degradation due to domain shifts in tasks such as brain segmentation from Magnetic Resonance Imaging (MRI)~\cite{shirokikh2020first,zakazov2021anatomy}, COVID-19 segmentation from chest Computer Tomography (CT)~\cite{saparov2021zero,shimovolos2022adaptation} images, and several others~\cite{vasiliuk2023limitations,shirokikh2025m3da}.
 
-%Paragraph about SA, SAA and other stuff from see comment
-%https://www.sciencedirect.com/science/article/abs/pii/S1367578819300306
-Chance constrained optimization originated in 1958 by Charnes \cite{charnes1958cost} and since then found a wide range of applications. For example, in economics \cite{yaari1965uncertain}, control theory \cite{calafiore2006scenario}, chemical processes \cite{sahinidis2004optimization} and in machine learning \cite{bertsimas2018robust,caramanis2011robust}.  Chance constraints are generally do not admit a closed-form expression. To this end, several approaches were developed to construct various approximations chance constraints. These approaches further evolved into major research and application fields. Among them are Abmiguous Chance Constraints \cite{nemirovski2012safe, ben2009robust}, Robust Optimization (RO) based Methods \cite{bertsimas2011theory}, Sample Average Approximation (SAA) \cite{sen1992relaxations, ahmed2008solving} and Scenario Approach (Approximation) (SA) \cite{calafiore2005uncertain}. SA and SAA are data-driven approaches, whereas the others are analytical or mixed.
+Addressing these distributional differences between training and testing data is essential, requiring the development of robust Domain Adaptation (DA) methods. Although the importance of developing DA methods specifically in medical imaging has been emphasized in numerous studies~\cite{gulrajani2020search,uda_survey_2020,zhuang2020comprehensive,peng2018visda,zhang2021empirical}, we outline several critical gaps remaining in the literature.
 
+One such gap is the lack of robustness to particular types of domain shifts, including variations in MRI intensity distributions, CT reconstruction kernels, radiation dosages, and presence/absence of the contrast agents. We systematically investigate these challenges and propose novel DA methods either tailored to specific domain shift scenarios or applied universally across all of them.
 
-%Paragraph about "despite suck some dick" there are some problems. 
-Despite intensive research in the field of Chance Constrained Optimization, each subfield experiences difficulties: analytical approaches suffer from extensive conservativeness, while data-driven ones often are prohibitevely demanding in computational resources for large scale problems. The aforementioned drawbacks are critical in applications that require regular optimization. 
-One of such applications is power systems, where a higher amount of renewable generation increases power grid uncertainty, compromises its security, and challenges classical power grid operation and planning policies \cite{koutsoyiannis2016unavoidable}. It is worth mentioning that installation of renewable energy based generation is a common trend and brings substantial amount of randomness into the system \cite{koutsoyiannis2016unavoidable}, \cite{harjanne2019abandoning}. For example, according to recent International Energy Agency (IEA) report \cite{iea2024electricity}, renewable energy generation share growth is up to 50\% and to take 30\% of all conventional electricity generation around the world. 
+Additionally, we note the lack of standardized DA evaluation in 3D medical imaging. To this end, we propose the M3DA benchmark, a large-scale framework designed to comprehensively assess DA methods across multiple, clinically relevant domain shift scenarios, filling a crucial gap in the field. We also publish the Burdenko's Glioblastoma Progression (BGP) dataset, a systematic and annotated data collection for glioblastoma segmentation, enabling in-the-wild DA evaluation in highly heterogeneous clinical data.
 
-In power systems applications, the aforementioned drawbacks are crucial. Conservativeness leads to higher power market prices which influences industry and society, computational efficiency must be such that the computations accomplish within the re-evaluation interval defined by local system operator \cite{chen2008probabilistic, koutsoyiannis2016unavoidable, stott2012optimal}.
-
-%Example:
-%"Power systems are the backbone of modern society, providing the necessary energy to drive economic activities, industrial processes, and daily life. As the demand for reliable and efficient energy continues to grow, the complexity and significance of power systems have increased, necessitating advanced research and development in this field."
-
-%Example:
-%"Power systems are the backbone of modern society, providing the necessary energy to drive economic activities, industrial processes, and daily life. As the demand for reliable and efficient energy continues to grow, the complexity and significance of power systems have increased, necessitating advanced research and development in this field."
+To summarize, this thesis is dedicated to developing novel methods, constructing standardized benchmarks, and expanding publicly available datasets in the field of domain adaptation in 3D medical image segmentation, bringing DL models closer to robust, real-world clinical deployment.
 
 
 \paragraph{Relevance of the work.}
 
 
-The research holds significant importance as it is developing and applying advanced methods such as mirror descent based adaptive importance sampling and A-priori Reduced Scenario Approximation (AR-SA), the research aims to improve the efficiency and accuracy of sample based probability estimation and optimization under uncertainty. These methods contribute to overcoming limitations in current approaches, such as impracticality for real-time operations, overestimation of risks, and computational infeasibility in large-scale problems. The outcomes of this research are expected to enhance the efficiency of commonly used approaches, making them significantly less data demanding. Moreover, the proposed methods and approaches are shown to be effective in power systems applications as they addresses critical challenges in modeling power systems with high amount of installed renewable energy generation, which become ubiquitous. %This aligns with global sustainability goals by promoting cleaner energy solutions, reducing greenhouse gas emissions, and enhancing energy security and resilience. 
-%Ultimately, the research contributes to the advancement of power system technologies, supporting the global transition towards a more sustainable energy future.
+The aforementioned DL advancements hold immense potential for improving diagnostic accuracy, reducing human error, and enhancing the overall efficiency of healthcare systems. However, the clinical application of DL models is significantly challenged by their susceptibility to domain shifts -- variations between the data on which models are trained and the data encountered in real-world clinical environments. Such shifts lead to a dramatic decline in model performance.
 
-
-
-% The \textbf{relevance} of the work is achieved by improving optimization algorithms' and approches' efficiency that would allow for more faster and accurate power grid risk estimation and operation.
-%Paragraph about Many researchers tried to suck some dick here but 
-% In other words, this thesis focuses on improving numerical efficiency of the data-driven approaches. This study leverages advanced statistical methods such as Importance Sampling (IS) for estimation of reliability of current power system state in power systems with high renewable energy penetration setting. Further, IS is adapted for increasing numerical efficiency of SA for static and dynamic estimation of optimal power generation in a power grid.
+This work directly addresses the issue of domain shift in 3D medical image segmentation, contributing to the development of more robust and generalizable DL models. The methods proposed in this thesis, such as SpotTUnet, FBPAug, and F-Consistency, are designed to mitigate the adverse effects, ensuring that segmentation models maintain their accuracy on the target domains. Moreover, the introduction of new adaptation techniques, DA and Out-of-Distribution (OOD) benchmarks, and the annotated publicly available dataset for 3D medical imaging fills significant gaps in the current literature.
 
 
 
@@ -61,23 +46,17 @@ The research holds significant importance as it is developing and applying advan
 %"Despite significant advancements in power systems, challenges remain in improving the efficiency and stability of power grids, particularly with the integration of renewable energy sources. This research aims to address these challenges by exploring new circuit designs and control strategies."
 \paragraph{Dissertation goals.}
 
+The primary goal of this thesis is to \textbf{address the challenges posed by domain shifts in 3D medical image segmentation}, which are a significant obstacle to the reliable and accurate performance of DL models in real-world clinical settings. By investigating various sources of domain shifts, particularly in magnetic resonance (MR) and computed tomography (CT) images, the thesis aims to develop robust methods that improve the generalization of segmentation models across different imaging domains. This work not only focuses on enhancing the performance of models through developing fine-tuning and domain adaptation (DA) methods but also introduces novel benchmarks and a dataset to ensure that these models can effectively handle out-of-distribution (OOD) data, which is critical for the safe deployment of deep learning (DL) in medical applications.
 
-This research aims to develop advanced methods for improving the efficiency and accuracy of reliability assessments and optimization under uncertainty. The results are demonstrated on power systems applications.
-To achieve this goal, the following tasks were set up and performed:
-% a)	Probability Estimation: Develop numerically efficient methods for estimating the probability of the current power system state being feasible against uncertainties that come from RES generation.
-% b)	Single Timestamp Optimization: Develop statistically based alorithms for the construction of data-efficient SA for S-OPF that yield reliable solutions for individual timestamps. Provide theoretical guarantees.
-% c)	24-Hour Sequence Optimization: Generalize the results of b) to optimize generator actions throughout a 24-hour period.
+In accordance to this goal, the following tasks were set:
+
 
 \begin{enumerate}
-    \item Probability Estimation: Develop numerically efficient methods for estimating the probability measure of a polyhedron's complement. Provide theoretical support by formalizing the convergence theorem for estimate's variance and proving it. Support the theoretical advances by demonstrating algorithm's efficiency on power systems test cases. The power system example is the estimation of the probability that the current power system state is feasible against uncertainties that come from RES generation.
-    \item Linear Programming under Additive Uncertainty: Develop statistically based algorithms for the construction of data-efficient Scenario Approximation (SA) for Chance-Constrained Linear Programs that yield reliable solutions, assuming additive Gaussian uncertainty for decision variables. Provide theoretical guarantees that show the improvement for required number of samples for obtaining reliable solution. Demonstrate the approximation method validity numerically on power systems test cases, compare with existing approaches. The power system example is Chance Constrained Optimal Power Flow.
-    \item Linear Programming under Mixed Multiplicative-Additive Uncertainty: Generalize results for a non-Gaussian source uncertainty on a non-Gaussian case, consider mixed multiplicative-additive uncertainty. Assuming typical total uncertainty mitigation setup, derive analytical condition for filtering redundant scenarios in this setting. Prove that such scenario filtering increases data efficiency and demonstrate numerically the superiority to the scenario reduction methods and ambiguous chance constraints approach. Provide demonstration on power system example which is sequential time-stamp power system modeling, where major uncertainty contributors in grid are renewable energy sources (photo-voltaic panels, wind farms, hydro electrical generators, stochastic demand) and the algorithm for uncertainty mitigation is linear Automatic Generation Control (AGC).
+    \item To investigate the domain shift effects on segmentation model performance, particularly in MRI and CT images.
+    \item Develop and evaluate new robust methods to mitigate domain shifts, i.e., to improve the consistency and generalization of deep neural network segmentation models across varied imaging conditions.
+    \item Establish benchmarks and datasets for DA and OOD detection in medical imaging to facilitate the evaluation and development of robust methods for 3D medical image segmentation.
+    \item Examine existing DA and OOD detection methods and propose or indicate improvements.
 \end{enumerate}
-%We propose an adaptive importance sampling method to estimate the risk of reliability constraints violation more efficiently. 
-% This method utilizes physical information to create a mixture of distributions for sampling and employs convex optimization to iteratively adjust the weights of the mixture. 
-% By incorporating importance sampling, we aim to reduce the complexity and enhance the accuracy of scenario approximations for chance-constrained optimal power flow. This approach generates more informative samples, resulting in an optimization problem with fewer constraints. 
-% Additionally, we propose an A-priori Reduced Scenario Approximation (AR-SA) method, which integrates data-driven scenario approximation techniques to reduce the number of samples required while maintaining solution reliability. This method seeks to provide theoretical guarantees for the feasibility of solutions in joint chance-constrained dynamic optimal power flow problems. Our research extends existing importance sampling techniques and contributes to more effective and practical solutions for managing uncertainties in power system operations.
-
 
 
 % 5. Scope and Limitations
@@ -104,57 +83,83 @@ To achieve this goal, the following tasks were set up and performed:
 % Cite Relevant Literature: Support your statements with references to key studies and authoritative sources in the field.
 % By following these guidelines, you can craft an effective introduction chapter that provides a strong foundation for your PhD thesis on power systems.
 
+
 \paragraph{Scientific novelty.}
 
-
 The scientific novelty is built up from the following results:
+
 \begin{enumerate}
-    \item The application of adaptive importance sampling combined with mirror descent methods to power systems, particularly in scenarios involving rare events. The convergence of the algorithm was established through stating and proving a convergence theorem for optimizing estimate's variance. Next, the performance of this novel approach with practical algorithms, such as pmvnorm, was demonstrated on an example from power systems that highlights its effectiveness and potential advantages.
-    \item A novel method for constructing scenario approximations, introducing a more efficient and accurate approach to scenario approximation. The theoretical guarantees for this novel construction method were provided, ensuring its mathematical soundness and reliability. Lastly, a numerical demonstrations on power systems examples were conducted to compare the performance of this new scenario approximation method with classical Monte Carlo-based approach, highlighting its efficiency and accuracy.
-    \item Introducing an a priori approach to reduce scenario approximations for dynamic optimal power flow with automatic generation control (AGC), enhancing computational efficiency and accuracy, studying normality of generation-demand mismatch using real time series of load, renewable generation of various sources. The statements that ensured validity of the reduction approach and shown an advantage in scenario complexity were proposed. These statements confirm the method's effectiveness and reliability in reducing scenario approximations for chance constrained linear programs with multiplicative uncertainty. A numerical demonstration was conducted on a dynamic optimal power flow problem. The demonstration compares the proposed a-priori approach with other scenario reduction methods, incorporating data-driven distributional robust optimization to showcase its superior performance and practical applicability.
+	\item A novel gradient-based method, SpotTUnet, was proposed and implemented to automatically identify and fine-tune the neural network layers most susceptible to domain shifts in supervised domain adaptation settings, improving segmentation performance under limited data availability.
+	\item A knowledge-driven augmentation technique, Filtered Back-Projection Augmentation (FBPAug), was developed for the first time to simulate the effect of CT reconstruction kernel variability, significantly improving segmentation consistency.
+	\item A data-driven unsupervised domain adaptation method, F-Consistency, was developed for the first time to address CT reconstruction kernel variability by enforcing feature map similarity between paired images. The method achieves state-of-the-art performance under kernel-induced domain shifts and establishes a foundation for future self-supervised learning approaches using FBPAug-generated pairs and the F-Consistency criterion.
+	\item A large-scale benchmark, M3DA, was introduced for evaluating unsupervised domain adaptation methods in 3D medical image segmentation, revealing critical limitations of existing approaches – none of which close more than 61\% of the performance gap between source and target domains.
+	\item A new publicly available dataset was collected and published for primary glioblastoma segmentation in radiotherapy planning. It allows for testing domain adaptation methods in the close to clinical scenarios.
+	\item A benchmark for out-of-distribution detection in 3D medical imaging was constructed for the first time, containing multiple challenge scenarios and exposing critical limitations of existing OOD detection methods.
 \end{enumerate}
 
 \paragraph{Theoretical and practical significance.}
 
+The developed methods, including SpotTUnet, FBPAug, and F-Consistency, demonstrate strong potential for improving the robustness of medical segmentation models across diverse imaging protocols and clinical environments. The introduced M3DA and OOD detection benchmarks provide systematic tools for evaluating domain adaptation and reliability of segmentation algorithms in real-world scenarios. Furthermore, the published Burdenko Glioblastoma Progression dataset offers a clinically relevant testbed for developing and validating domain adaptation methods in radiotherapy planning. Altogether, the results of this dissertation contribute to advancing the safe deployment of deep learning in clinical practice and help bridge the gap between algorithmic development and medical application.
 
-This innovative approach could significantly advance the field of scenario approximation by offering a more efficient and accurate methods. It may lead to advancements in mathematical modeling and optimization techniques. Implementing these new methods could enhance the performance of power system simulations, leading to more accurate predictions and better decision-making in energy management. Providing theoretical guarantees for the new construction method solidifies its mathematical underpinnings, paving the way for its wider acceptance in research and practical applications. Assurance of the method's validity offers confidence to practitioners and decision-makers in utilizing it for scenario approximation in power systems, potentially leading to more reliable system planning and operation. Conducting numerical demonstrations and comparisons contributes to the theoretical understanding of scenario approximation methods, offering insights into their strengths and weaknesses. By comparing the new approach with classical Monte Carlo-based methods, the study can inform practitioners about the performance differences, aiding them in choosing the most suitable method for scenario approximation in power systems. Moreover, numerical experiments included comparison of total execution time with current state-of-the-art methods and show the practical advantages of the proposed methods.
+The majority of methods and benchmarks have publicly available source code:
+
+\begin{enumerate}
+	% \fontsize{10pt}{11pt}\selectfont
+	\item First-layers fine-tuning: \href{https://github.com/kechua/DART20}{https://github.com/kechua/DART20}
+	\item Domain Shift Anatomy: \hfill \hfill \linebreak \href{https://github.com/neuro-ml/domain_shift_anatomy}{https://github.com/neuro-ml/domain\_shift\_anatomy}
+	\item Filtered Back-Projection Augmentation: \hfill \hfill \linebreak \href{https://github.com/STNLd2/FBPAug}{https://github.com/STNLd2/FBPAug}
+	\item M3DA benchmark: \href{https://github.com/BorisShirokikh/M3DA}{https://github.com/BorisShirokikh/M3DA}
+	\item {Burdenko's Glioblastoma Progression Dataset: \hfill \hfill \linebreak \href{https://www.cancerimagingarchive.net/collection/burdenko-gbm-progression/}{cancerimagingarchive.net/collection/burdenko-gbm-progression/}}
+	\item Benchmark for Out-of-distribution detection on 3D medical images: \hfill \linebreak \href{https://github.com/francisso/OOD-benchmark}{https://github.com/francisso/OOD-benchmark}
+	\item Intensity Histogram Features algorithm: \hfill \hfill \linebreak \href{https://github.com/BorisShirokikh/MOOD\_submission\_Sample-level\_AIRI}{github.com/BorisShirokikh/MOOD\_submission\_Sample-level\_AIRI}
+\end{enumerate}
+
+In addition to being published and open-sourced, FBPAug has been integrated into multiple products at IRA Labs Ltd, including a COVID-19 segmentation algorithm registered as Intellectual Property\footnote{\href{https://www.fips.ru/registers-doc-view/fips\_servlet?DB=EVM\&DocNumber=2021612647}{https://www.fips.ru/registers-doc-view/fips\_servlet?DB=EVM\&DocNumber=2021612647}}, further demonstrating the practical significance of this work.
+
 
 \paragraph{Research methodology.}
 
+Methodology included methods of linear algebra, analysis, probability theory, mathematical statistics, numerical optimization methods, software development and models of computer tomography.
 
-Methodology included methods of linear algebra, probability theory, mathematical statistics, numerical optimization methods, aspects of optimization methods, software development and models of power systems.
+%\newpage  %TODO: ???
 
-\newpage
 
 \paragraph{Propositions for defense.}
 
-
 \begin{enumerate}
+	
+	\item A novel supervised domain adaptation method, SpotTUnet, was developed to automatically identify and fine-tune layers most affected by domain shift. The method improved segmentation performance in MRI across diverse clinical domains and provided interpretable insights into layer-wise shift susceptibility. Used as a visualization or guidance tool, SpotTUnet contributed to the development of the further proposed methods, such as F-Consistency and IHF.
+	\item A knowledge-driven augmentation technique, FBPAug, was proposed to address domain shifts caused by different CT reconstruction kernels. The method significantly increased prediction consistency across paired reconstructions, improving Dice score from 0.46 to 0.76 in COVID-19 lung segmentation. Furthermore, FBPAug was used to develop most of the commercially used CT segmentation algorithms, significantly improving their robustness.
+	\item A data-driven unsupervised adaptation method, F-Consistency, was introduced to leverage paired CT images reconstructed with different kernels. By enforcing feature map similarity, the method achieved state-of-the-art results in kernel-induced domain shift settings, further increasing Dice score to 0.80.
+	\item The M3DA benchmark was constructed for the large-scale evaluation of unsupervised DA methods in 3D medical image segmentation. It comprises four publicly available datasets and eight clinically relevant domain shift setups, including shifts across modalities, acquisition protocols, and contrast settings.
+	\item A new dataset, Burdenko’s Glioblastoma Progression (BGP), was collected and published to evaluate segmentation models in a realistic DA scenario. It includes multi-sequence MRI scans from 180 patients acquired across multiple clinical sites and scanner vendors, enabling testing under heterogeneous acquisition variability.
+	\item A benchmark for OOD detection in 3D medical segmentation was proposed, containing several clinically relevant challenge cases. It revealed fundamental limitations of existing OOD methods and established practical evaluation criteria for real-world robustness assessment.
+	\item An effective OOD detection method, Intensity Histogram Features (IHF), was developed. With the lowest computational cost, it achieved top-2 ranking in the Medical Out-of-Distribution Challenge (MOOD) 2022 and 2023, making it a strong baseline and analysis tool for domain shifts in 3D medical images.
 
-    \item A numerical iterative method for estimation of a Gaussian volume of a polyhedron's complement. The method is of adaptive importance sampling family, where the sampling distribution is a Gaussian mixture. It iteratively minimizes the variance of the estimate over mixture weights using Mirror Descent. The convexity of the optimization problem is shown, stochastic gradient's expression is derived and, finally, the iterative method's convergence is shown. The method's performance is demonstrated against other estimation algorithms on power systems examples.
-    \item An algorithm for construction of Scenario Approximation for linear programming with additive uncertainty is proposed for solving Joint Chance Constrained programs. This algorithm is based on Importance Sampling, where the sampling distribution is Gaussian mixture. The subset of feasibility set is derived based on Gaussianity assumption for the sampling outside of it and constructing the SA based on those scenarios. The theorem on solution reliability and the number of samples required of such importance sampling based SA is stated, the proof was provided. The numerical demonstration is carried out on power systems test cases and compared to classical SA construction algorithms.
-    \item An algorithm for construction of Scenario Approximation for linear programming with mixed additive-multiplicative uncertainty is proposed for solving Joint Chance Constrained linear programs. The subset of feasibility set is derived for a-priori elimination of the redundant scenarios. The demonstration is conducted on the power system example which is sequential time-stamp power system modeling, where major uncertainty contributors in grid are renewable energy sources (photo-voltaic panels, wind farms, hydro electrical generators, stochastic demand) and the algorithm for uncertainty mitigation is linear Automatic Generation Control (AGC).
+    % The convexity of the optimization problem is shown, stochastic gradient's expression is derived and, finally, the iterative method's convergence is shown. The method's performance is demonstrated against other estimation algorithms on power systems examples.
+    % the proof was provided. The numerical demonstration is carried out on power systems test cases and compared to classical SA construction algorithms.
     %The Gaussianity assumption is demostrated to be valid using Shapiro-Wilks statistical tests on real time series. 
-    The theorem on solution reliability and the number of samples required for reduced problems is stated, the proof was provided. The numerical demonstration is carried out on power systems test cases and compared to advanced scenario reduction methods and ambiguous chance constrained method.
+    % The theorem on solution reliability and the number of samples required for reduced problems is stated, the proof was provided. The numerical demonstration is carried out on power systems test cases and compared to advanced scenario reduction methods and ambiguous chance constrained method.
  
 \end{enumerate}
 
+
 \paragraph{Validation of the research results, reliability.}
 
-
-The main results of the work have been reported in the following scientific conferences and workshops:
+The statements and conclusions formulated in the dissertation have received qualified approbation at the following international and Russian scientific conferences:
 
 \begin{enumerate}
-    \item INFORMS Annual Meeting 2021, 1st INFORMS Workshop on Quality, Statistics \& Reliability, October 15, 2021, Indianapolis
-    \item Rank A, CDC 2021, 60th IEEE Conference on Decision and Control, December 13-15 2021
-    \item Energy Research Seminar, Skoltech, October 12 2021
-    \item Rank A, IEEE PowerTech, Belgrade, June 25-29 2023
-    \item Seminar Lab. 7 of Institute for Control Sciences of Russian Academy of Sciences ''Theory of Automatic Control'', October 15 2024
+	\item Domain Adaptation and Representation Transfer MICCAI 2020 Workshop. Lima, Peru, October 2020.
+    \item Cross-Modality Domain Adaptation for Medical Image Segmentation (challenge-associated satellite event at MICCAI). Strasbourg, France, September 2021.
+    \item Conference on Medical Image Computing and Computer Assisted Intervention (MICCAI). Strasbourg, France, September 2021.
+    \item Information Technologies and Systems (ITaS) conference. November 2021.
+    \item Medical Out-of-Distribution Analysis Challenge (challenge-associated satellite event at MICCAI). Singapore, September 2022.
+    \item Information Technologies and Systems (ITaS) conference. Istra, Russia, September 2023.
 \end{enumerate}
 
-The proposed methods and approaches were equipped with theoretical statements, the proofs were provided, numerical examples show their validity. Specifically, for iterative methods, the convergence theorem was stated. The statement introduces a bound for the target estimate's variance and reveals asymptotic behaviour with respect to the number of iterations. For those methods that are applied to Scenario Approximations, theorems on an improvement in requires number of data samples (scenarios) are stated. Finally, all the proposed methods are compared with existing methods for solving similar optimization problems using measurable metrics. 
+The reliability of the results is ensured by comprehensive experimental evaluation across multiple datasets, diverse experimental settings, and multiple methods of statistical analysis, with all validation procedures in accordance with the leading work in the area. The reproducibility of findings was validated through systematic benchmarking of multiple deep learning algorithms and repeated experiments to ensure statistical significance of the results. All the proposed methods are compared with existing methods for domain adaptation or OOD detection using measurable metrics.
 
-All of the proposed methodologies and approaches were published in WoS, Scopus indexed journals of rank Q1 and presented at reputable international conferences.
+The credibility is also confirmed by two publications of research results in Q1 peer-reviewed scientific journals, two publications in Q2 peer-reviewed journals, and three peer-reviewed conference proceedings, including one in proceedings of the Rank A conference. All of these journals and proceedings are WoS, Scopus indexed.
 
 % \paragraph{Summary.}
 % The integration of renewable energy sources into modern power systems presents both significant opportunities and challenges. While these sources are crucial for achieving carbon-free electricity generation and meeting global sustainability goals, their inherent variability and uncertainty pose risks to grid reliability and stability. This research identifies the limitations of current methods for managing these uncertainties, such as machine learning, analytical approximations, and sampling-based algorithms, particularly in the context of the Optimal Power Flow (OPF) problem and its extensions. In response, we propose novel methods, including adaptive importance sampling and A-priori Reduced Scenario Approximation (AR-SA), to enhance the efficiency and accuracy of reliability assessments and optimization in power systems under uncertainty. By addressing these challenges, the research aims to improve the operational reliability and economic efficiency of power systems, facilitating the successful integration of renewable energy sources and supporting the global transition towards a sustainable energy future.
@@ -186,7 +191,14 @@ All of the proposed methodologies and approaches were published in WoS, Scopus i
 \newpage
 
 \section*{Acknowledgments} 
-The dissertation was completed at the {\thesisOrganizationEn}.
+The dissertation was completed at the {\thesisOrganizationEnNonTitle}.
 
-I thank my advisor, Elena Gryazina, for providing guidance and assistance at all stages of my doctoral study. I would like to devote special and sincere gratitude to my former scientific advisor and long-term co-author Yury Maximov, who initally showed the research potential in the field of statistical methods in power system and supported me throughout the whole research started even before my graduate study period. I also thank my coauthors, Deepjyoti Deka, Mile Mitrovic, Petr Vorobev, Aleksandr Bulkin and Vyacheslav Gorchakov, for numerous insightful discussions. Last but not least, I thank my wife, my family and my friends for immense support during my scientific journey.
+I would like to thank everyone who has supported me throughout my academic journey and during the preparation of this thesis.
+
+First and foremost, I am deeply thankful to my primary supervisor, Mikhail Belyaev, for his unwavering support and guidance during my Bachelor's, Master's, and Ph.D. studies. His insights into the research world and the knowledge he has shared have been invaluable in my academic and personal growth. Much of my scientific success is the result of our close collaboration and the work with his research team.
+
+I am also deeply thankful to my collaborators and co-authors, who have greatly contributed to my scientific journey (in alphabetical order): Alexandra Dalechina, Daria Frolova, Mikhail Goncharov, Egor Krivov, Anvar Kurmukov, Ivan Oseledets, Maxim Panov, Mikhail Pautov, Maxim Pisov, Talgat Saparov, Alexey Shevtsov, Anton Vasiliuk, and Ivan Zakazov. I am fortunate to have had the opportunity to work with and learn from such brilliant people.
+
+I am deeply thankful to my family for their constant help and belief in me.
+
 

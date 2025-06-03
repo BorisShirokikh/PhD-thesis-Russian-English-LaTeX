@@ -25,8 +25,6 @@ Most changes are done by putting the Russifying commands into if-blocks.
 
 [**Установка программного обеспечения и сборка диссертации в файлы PDF**](Readme/Installation.md).
 
-[**Как писать диссертацию на GitHub?**](Readme/github.md)
-
 ## Обсуждение
 Общие вопросы лучше всего писать в gitter-канал:
 [![Join the chat at https://gitter.im/AndreyAkinshin/Russian-Phd-LaTeX-Dissertation-Template](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/AndreyAkinshin/Russian-Phd-LaTeX-Dissertation-Template?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
@@ -55,7 +53,6 @@ Most changes are done by putting the Russifying commands into if-blocks.
   только к презентации.
   * [setup.tex](Presentation/setup.tex): Файл упрощённой настройки оформления
   презентации.
-* **[папка Documents](Documents/):** Полезные документы (ГОСТ-ы и постановления).
 * **[папка PSCyr](PSCyr/):** Пакет PSCyr + инструкции по установке.
 * **[папка BibTeX-Styles](BibTeX-Styles/):** Подборка русских стилевых пакетов
 BibTeX под UTF-8.
@@ -105,19 +102,7 @@ BibTeX под UTF-8.
 ## Дополнительная полезная информация
 
 * [Оформление библиографии](Readme/Bibliography.md)
-* [Как вносить правки в проект](CONTRIBUTING.md)
 * [Полезные ссылки](Readme/Links.md)
-* [Шаблон в галерее шаблонов ShareLaTeX](https://www.sharelatex.com/templates/thesis/russian-phd-latex-dissertation-template) (очень старая версия).
-
-## Благодарности
-* Большое спасибо Юлии Мартыновой за [оригинальный вариант шаблона](http://alessia-lano.livejournal.com/4267.html).
-* Большое спасибо [dustalov](https://github.com/dustalov),
-[Lenchik](https://github.com/Lenchik), [tonkonogov](https://github.com/tonkonogov)
-за значительный вклад и обсуждения.
-* Спасибо [storkvist](https://github.com/storkvist), [kshmirko](https://github.com/kshmirko),
-[ZoomRmc](https://github.com/ZoomRmc), [tonytonov](https://github.com/tonytonov),
-[Thibak](https://github.com/Thibak), [eximius8](https://github.com/eximius8),
-[Nizky](https://github.com/Nizky) за полезные правки и замечания.
 
 ## Лицензия
 
