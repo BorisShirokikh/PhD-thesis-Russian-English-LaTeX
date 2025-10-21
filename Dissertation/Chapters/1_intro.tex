@@ -5,11 +5,16 @@
 \label{chap:Introduction}
 
 
-\paragraph{Background.}
-
+\underline{\textbf{The relevance of the research area. The degree of its development.}}
 The rapid advancements in Deep Learning (DL) have established a strong foundation for automating medical image segmentation tasks~\cite{lee2017deep}. Segmentation algorithms, particularly those based on Convolutional Neural Networks (CNNs), have achieved near human-level performance across a variety of clinical applications, including brain tumor, lung cancer, organ-at-risk, and liver tumor segmentation. These algorithms continue to evolve, offering increasingly accurate results.
 
-In our previous work, we have demonstrated the practical impact of carefully developed DL methods in real clinical workflows. For instance, we contributed to the radiotherapeutic delineation process at the Moscow Gamma-Knife Center by developing a model that provides accurate brain metastases segmentation contours~\cite{shirokikh2022systematic}. Additionally, our work on automatic COVID-19 identification and severity triage has been successfully integrated into the Moscow healthcare system, streamlining patient management~\cite{goncharov2021ct,covid-program}.
+%In our previous work, we have demonstrated the practical impact of carefully developed DL methods in real clinical workflows. For instance, we contributed to the radiotherapeutic delineation process at the Moscow Gamma-Knife Center by developing a model that provides accurate brain metastases segmentation contours~\cite{shirokikh2022systematic}. Additionally, our work on automatic COVID-19 identification and severity triage has been successfully integrated into the Moscow healthcare system, streamlining patient management~\cite{goncharov2021ct,covid-program}.
+
+A major focus of our research was to evaluate and integrate DL methods into real-world clinical workflows. One of the earliest examples is the deployment of an automatic segmentation system for stereotactic radiosurgery of brain metastases at the Moscow Gamma Knife Center~\cite{shirokikh2022systematic}. Radiosurgery demands submillimeter precision in target delineation, where even minor variability between specialists can affect the radiation dose distribution and, consequently, treatment outcomes. The developed CNN-based segmentation model significantly improved the clinical workflow by reducing inter-rater detection disagreements by 48\%, enhancing contouring consistency (surface Dice score increased from 0.845 to 0.871), and halving the delineation time. The model was validated through a prospective clinical study involving four experts and twenty patients, showing its potential as a reliable assistant in radiosurgical planning. This work demonstrated that DL-based tools can yield measurable improvements in diagnostic precision and efficiency, highlighting their immediate clinical applicability and setting a methodological precedent for future clinical evaluations of DL systems.
+
+Another practically oriented line of research addressed the COVID-19 pandemic, during which the radiology departments of Moscow healthcare institutions faced extreme diagnostic loads. In collaboration with the Research and Practical Clinical Center for Diagnostics and Telemedicine Technologies, we developed a DL-based triage system for chest CT scans~\cite{goncharov2021ct,covid-program}. The proposed multitask convolutional network jointly performed COVID-19 identification and severity quantification, effectively prioritizing patients for urgent care. Trained on approximately 1500 CT studies and evaluated on an independent test set of 123 studies, the model achieved ROC AUC scores up to 0.97 for COVID-19 identification versus healthy controls and a 0.97 Spearman correlation for severity estimation. This system was successfully integrated into the Moscow healthcare workflow, accelerating patient sorting and resource allocation during the pandemic.% Beyond its immediate public health value, the project demonstrated the robustness and adaptability of DL systems in large-scale, heterogeneous medical environments.
+
+These two implementations -- one in precision radiosurgery, the other in large-scale public healthcare -- demonstrate the high clinical relevance and transformative potential of DL methods in medical imaging.
 
 Despite these successes, the widespread adoption of DL in medical imaging remains hindered by the significant drop in neural network performance when applied to data that differs from the training set. This challenge, known as \textbf{domain shift}, is particularly prevalent in medical imaging due to variations in scanner acquisition parameters, the introduction of new imaging modalities, and differences in patient populations. Our research has highlighted severe performance degradation due to domain shifts in tasks such as brain segmentation from Magnetic Resonance Imaging (MRI)~\cite{shirokikh2020first,zakazov2021anatomy}, COVID-19 segmentation from chest Computer Tomography (CT)~\cite{saparov2021zero,shimovolos2022adaptation} images, and several others~\cite{vasiliuk2023limitations,shirokikh2025m3da}.
 
@@ -22,34 +27,16 @@ Additionally, we note the lack of standardized DA evaluation in 3D medical imagi
 To summarize, this thesis is dedicated to developing novel methods, constructing standardized benchmarks, and expanding publicly available datasets in the field of domain adaptation in 3D medical image segmentation, bringing DL models closer to robust, real-world clinical deployment.
 
 
-\paragraph{Relevance of the work.}
+%\paragraph{Relevance of the work.}
+%
+%
+%The aforementioned DL advancements hold immense potential for improving diagnostic accuracy, reducing human error, and enhancing the overall efficiency of healthcare systems. However, the clinical application of DL models is significantly challenged by their susceptibility to domain shifts -- variations between the data on which models are trained and the data encountered in real-world clinical environments. Such shifts lead to a dramatic decline in model performance.
+%
+%This work directly addresses the issue of domain shift in 3D medical image segmentation, contributing to the development of more robust and generalizable DL models. The methods proposed in this thesis, such as SpotTUnet, FBPAug, and F-Consistency, are designed to mitigate the adverse effects, ensuring that segmentation models maintain their accuracy on the target domains. Moreover, the introduction of new adaptation techniques, DA and Out-of-Distribution (OOD) benchmarks, and the annotated publicly available dataset for 3D medical imaging fills significant gaps in the current literature.
 
 
-The aforementioned DL advancements hold immense potential for improving diagnostic accuracy, reducing human error, and enhancing the overall efficiency of healthcare systems. However, the clinical application of DL models is significantly challenged by their susceptibility to domain shifts -- variations between the data on which models are trained and the data encountered in real-world clinical environments. Such shifts lead to a dramatic decline in model performance.
-
-This work directly addresses the issue of domain shift in 3D medical image segmentation, contributing to the development of more robust and generalizable DL models. The methods proposed in this thesis, such as SpotTUnet, FBPAug, and F-Consistency, are designed to mitigate the adverse effects, ensuring that segmentation models maintain their accuracy on the target domains. Moreover, the introduction of new adaptation techniques, DA and Out-of-Distribution (OOD) benchmarks, and the annotated publicly available dataset for 3D medical imaging fills significant gaps in the current literature.
-
-
-
-% \paragraph{Problem statement.}
-%2. Problem Statement
-%Identify the specific problem or gap in the current knowledge that your research addresses. This should be a concise statement that clearly defines the issue your thesis will tackle.
-% Various algorithms have been developed to ensure grid reliability, utilizing methods ranging from machine learning to analytical and sampling-based approaches. Machine learning methods leverage historical data on weather, renewable generation, and grid operating parameters to estimate risks but are impractical for real-time operation due to their reliance on large datasets and extensive data collection times. Analytical approximation methods, which compute overload probabilities through integrals, often overestimate risks, particularly in rare events, compromising their practical efficiency. Sampling-based algorithms, such as Monte Carlo (MC) simulations, provide valuable alternatives for assessing reliability but struggle with the performance in evaluating rare, severe disturbances due to uniform exploration of fluctuation spaces.
-
-% The Optimal Power Flow (OPF) problem, crucial for determining economically optimal power generation levels under given constraints, has several extensions to address uncertainty in power generation and consumption. Robust and chance-constrained formulations are popular, with the former assuming bounded uncertainty and the latter requiring high-probability satisfaction of security constraints. The Joint Chance-Constrained Optimal Power Flow (JCC-OPF) problem bounds the probability of security constraint failures but is computationally hard even under linear security limits and Gaussian uncertainty. Tractable convex approximations often yield conservative solutions unsuitable for practical operations. Scenario and Sample Average Approximations, which replace stochastic elements with deterministic inequalities, can handle non-Gaussian uncertainties but may require a large number of samples, complicating their application in large-scale grids.
-
-% Additionally, the discrete-time dynamic chance-constrained OPF problem addresses optimal generation set-points over sequential timestamps, incorporating ramp-up and ramp-down constraints to manage the rate of power output changes. Automatic Generation Control (AGC) aids in efficient power dispatch, yet solving the chance-constrained problem for arbitrary distributions and joint technical limits remains computationally infeasible. Data-driven approximations, such as Scenario Approximation (SA) and Sample Average Approximation (SAA), although effective, are often computationally prohibitive when high accuracy is needed, necessitating extensive scenario reduction studies. This complexity highlights the need for improved methods to handle the uncertainties and operational challenges posed by the integration of renewable energy sources into power systems.
-
-% Summing up, modern power system are influenced by various uncertainty sources and require modern data-driven and data-efficient methods to, firstly, estimate reliability of the current power system state, secondly, reliably control the conventional generators to reach the most economically efficient state, simultaneously satistying demand and meeting technical constraints.
-
-%Example:
-%"Despite significant advancements in power systems, challenges remain in improving the efficiency and stability of power grids, particularly with the integration of renewable energy sources. This research aims to address these challenges by exploring new circuit designs and control strategies."
-\paragraph{Dissertation goals.}
-
-The primary goal of this thesis is to \textbf{address the challenges posed by domain shifts in 3D medical image segmentation}, which are a significant obstacle to the reliable and accurate performance of DL models in real-world clinical settings. By investigating various sources of domain shifts, particularly in MRI and CT images, the thesis aims to develop robust methods that improve the generalization of segmentation models across different imaging domains. This work not only focuses on enhancing the performance of models through developing fine-tuning and domain adaptation (DA) methods but also introduces novel benchmarks and a dataset to ensure that these models can effectively handle out-of-distribution (OOD) data, which is critical for the safe deployment of deep learning (DL) in medical applications.
-
-In accordance to this goal, the following tasks were set:
-
+\underline{\textbf{Goals and problems addressed.}}
+The primary goal of this thesis is to address the challenges posed by domain shifts in 3D medical image segmentation, which are a significant obstacle to the reliable and accurate performance of DL models in real-world clinical settings. By investigating various sources of domain shifts, particularly in MRI and CT images, the thesis aims to develop robust methods that improve the generalization of segmentation models across different imaging domains. This work not only focuses on enhancing the performance of models through developing fine-tuning and domain adaptation (DA) methods but also introduces novel benchmarks and a dataset to ensure that these models can effectively handle out-of-distribution (OOD) data, which is critical for the safe deployment of deep learning (DL) in medical applications. To achieve the goal of the dissertation, the following problems are addressed:
 
 \begin{enumerate}
     \item To investigate the domain shift effects on segmentation model performance, particularly in MRI and CT images.
@@ -59,35 +46,7 @@ In accordance to this goal, the following tasks were set:
 \end{enumerate}
 
 
-% 5. Scope and Limitations
-% Define the scope of your research, including what will and will not be covered. This helps to set clear boundaries and manage the expectations of your readers.
-
-% Example:
-% "The scope of this research is limited to the development and analysis of circuit designs and control strategies within the context of renewable energy integration. It does not cover other aspects of power systems such as economic analysis or policy implications."
-
-% 6. Structure of the Thesis
-% Provide an outline of the subsequent chapters and briefly describe their content. This helps readers understand the organization of your thesis and the logical flow of your research.
-
-% Example:
-% "The thesis is organized into six chapters. Chapter 2 reviews the relevant literature on power systems and renewable energy integration. Chapter 3 details the theoretical framework and methodologies used in the research. Chapter 4 presents the development of the proposed circuit designs. Chapter 5 discusses the control strategies for renewable energy integration. Chapter 6 evaluates the performance of the proposed solutions through simulations and experimental results. Finally, Chapter 7 concludes the thesis with a summary of findings and suggestions for future research."
-
-% 7. Summary
-% Conclude the introduction with a brief summary that reiterates the importance of your research and sets the stage for the detailed exploration in the following chapters.
-
-% Example:
-% "In summary, this thesis aims to address critical challenges in power systems, particularly in the integration of renewable energy sources. By developing innovative circuit designs and control strategies, this research seeks to enhance the efficiency and stability of power grids, contributing to the advancement of sustainable energy solutions. The following chapters will delve into the theoretical foundations, methodologies, and empirical findings that support these objectives."
-
-% Additional Tips
-% Be Clear and Concise: Avoid unnecessary jargon and complex sentences. Aim for clarity and brevity to ensure your introduction is accessible to a broad audience.
-% Engage the Reader: Start with a compelling statement or fact to capture the reader's interest.
-% Cite Relevant Literature: Support your statements with references to key studies and authoritative sources in the field.
-% By following these guidelines, you can craft an effective introduction chapter that provides a strong foundation for your PhD thesis on power systems.
-
-
-\paragraph{Scientific novelty.}
-
-The scientific novelty is built up from the following results:
-
+\underline{\textbf{Scientific novelty.}}%The scientific novelty is built up from the following results:
 \begin{enumerate}
 	\item A novel gradient-based method, SpotTUnet, was proposed and implemented to automatically identify and fine-tune the neural network layers most susceptible to domain shifts in supervised domain adaptation settings, improving segmentation performance under limited data availability.
 	\item A knowledge-driven augmentation technique, Filtered Back-Projection Augmentation (FBPAug), was developed for the first time to simulate the effect of CT reconstruction kernel variability, significantly improving segmentation consistency.
@@ -97,8 +56,8 @@ The scientific novelty is built up from the following results:
 	\item A benchmark for out-of-distribution detection in 3D medical imaging was constructed for the first time, containing multiple challenge scenarios and exposing critical limitations of existing OOD detection methods.
 \end{enumerate}
 
-\paragraph{Theoretical and practical significance.}
 
+\underline{\textbf{Theoretical and practical significance.}}
 The developed methods, including SpotTUnet, FBPAug, and F-Consistency, demonstrate strong potential for improving the robustness of medical segmentation models across diverse imaging protocols and clinical environments. The introduced M3DA and OOD detection benchmarks provide systematic tools for evaluating domain adaptation and reliability of segmentation algorithms in real-world scenarios. Furthermore, the published Burdenko Glioblastoma Progression dataset offers a clinically relevant testbed for developing and validating domain adaptation methods in radiotherapy planning. Altogether, the results of this dissertation contribute to advancing the safe deployment of deep learning in clinical practice and help bridge the gap between algorithmic development and medical application.
 
 The majority of methods and benchmarks have publicly available source code:
@@ -114,18 +73,15 @@ The majority of methods and benchmarks have publicly available source code:
 	\item Intensity Histogram Features algorithm: \hfill \hfill \linebreak \href{https://github.com/BorisShirokikh/MOOD\_submission\_Sample-level\_AIRI}{github.com/BorisShirokikh/MOOD\_submission\_Sample-level\_AIRI}
 \end{enumerate}
 
-In addition to being published and open-sourced, FBPAug has been integrated into multiple products at IRA Labs Ltd, including a COVID-19 segmentation algorithm registered as Intellectual Property\footnote{\href{https://www.fips.ru/registers-doc-view/fips\_servlet?DB=EVM\&DocNumber=2021612647}{https://www.fips.ru/registers-doc-view/fips\_servlet?DB=EVM\&DocNumber=2021612647}}, further demonstrating the practical significance of this work.
+In addition to being published and open-sourced, FBPAug has been integrated into multiple products at IRA Labs Ltd, including a COVID-19 segmentation algorithm registered as Intellectual Property\footnote{\href{https://www.fips.ru/registers-doc-view/fips\_servlet?DB=EVM\&DocNumber=2021612647}{https://www.fips.ru/registers-doc-view/fips\_servlet?DB=EVM\&DocNumber=2021612647}}, further demonstrating the practical significance of this work. The corresponding \underline{certificate of state registration of computer programs} could be found in Appendix~\ref{app:reg}.
 
 
-\paragraph{Research methodology.}
-
-Methodology included methods of linear algebra, analysis, probability theory, mathematical statistics, numerical optimization methods, software development and models of computer tomography.
+\underline{\textbf{Research methodology.}} The research focuses on machine learning and deep learning techniques to solve the stated problems. Methodology also included methods of linear algebra, analysis, probability theory, mathematical statistics, numerical optimization methods, software development and mathematical models of computer tomography. Most of the methods are implemented in Python programming language and its low-level libraries.
 
 %\newpage
-% TODO: ???
 
 
-\paragraph{Propositions for defense.}
+\underline{\textbf{Propositions submitted for defense.}}
 
 \begin{enumerate}
 	
@@ -145,9 +101,7 @@ Methodology included methods of linear algebra, analysis, probability theory, ma
 \end{enumerate}
 
 
-\paragraph{Validation of the research results, reliability.}
-
-The statements and conclusions formulated in the dissertation have received qualified approbation at the following international and Russian scientific conferences:
+\underline{\textbf{Validity of the obtained results. Approbation.}} The statements and conclusions formulated in the dissertation have received qualified approbation at the following international and Russian scientific conferences:
 
 \begin{enumerate}
 	\item Domain Adaptation and Representation Transfer MICCAI 2020 Workshop. Lima, Peru, October 2020.
@@ -160,12 +114,33 @@ The statements and conclusions formulated in the dissertation have received qual
 
 The reliability of the results is ensured by comprehensive experimental evaluation across multiple datasets, diverse experimental settings, and multiple methods of statistical analysis, with all validation procedures in accordance with the leading work in the area. The reproducibility of findings was validated through systematic benchmarking of multiple deep learning algorithms and repeated experiments to ensure statistical significance of the results. All the proposed methods are compared with existing methods for domain adaptation or OOD detection using measurable metrics.
 
-The credibility is also confirmed by two publications of research results in Q1 peer-reviewed scientific journals, two publications in Q2 peer-reviewed journals, and three peer-reviewed conference proceedings, including one in proceedings of the Rank A conference. All of these journals and proceedings are WoS, Scopus indexed.
-
-% \paragraph{Summary.}
-% The integration of renewable energy sources into modern power systems presents both significant opportunities and challenges. While these sources are crucial for achieving carbon-free electricity generation and meeting global sustainability goals, their inherent variability and uncertainty pose risks to grid reliability and stability. This research identifies the limitations of current methods for managing these uncertainties, such as machine learning, analytical approximations, and sampling-based algorithms, particularly in the context of the Optimal Power Flow (OPF) problem and its extensions. In response, we propose novel methods, including adaptive importance sampling and A-priori Reduced Scenario Approximation (AR-SA), to enhance the efficiency and accuracy of reliability assessments and optimization in power systems under uncertainty. By addressing these challenges, the research aims to improve the operational reliability and economic efficiency of power systems, facilitating the successful integration of renewable energy sources and supporting the global transition towards a sustainable energy future.
+The credibility is also confirmed by two publications of research results in Q1 peer-reviewed scientific journals, two publications in Q2 peer-reviewed journals, and three peer-reviewed conference proceedings, including one in proceedings of the Rank A conference. All of these journals and proceedings are indexed in Scopus and Web of Science.
 
 
+\underline{\textbf{Personal contribution of the author.}}
+The content of the dissertation and the main statements submitted for defense reflect the author’s personal contribution to the published works, obtained personally by the author or with his direct participation. The author’s contribution includes the formulation of research objectives, literature analysis, design and execution of extensive computational experiments, and interpretation of the obtained results. The dissertation aims and objectives were formulated jointly by the author, the author’s scientific supervisor, Prof. Ivan V. Oseledets, and Dr. Mikhail G. Belyaev (IRA Labs Ltd).
+
+Preparation of the seven publications (four in peer-reviewed journals and three in conference proceedings) was carried out together with co-authors, with the author’s contribution being decisive. In particular, the author proposed the core methodologies for domain adaptation and out-of-distribution detection, developed experimental pipelines, and analyzed experimental results. Additionally, the author contributed to the development of a software product registered by the state and to the creation of a publicly available medical imaging dataset.
+%All the results of the dissertation were obtained by the applicant personally. The applicant developed a deep learning structure-based method for identification of binding sites on macromolecules. The applicant is first on the author lists of all three major publications on the topic of the thesis.
+
+%The content of the dissertation and the main statement submitted for defense reflect the author’s personal contribution to the published works and have been received personally by the author or with her direct participation. The author’s contribution includes setting research objectives, studying literature corresponding to the topic, designing and carrying out experiments, and analyzing the received results. The problem statements were formulated by A. Zaytsev, the author’s scientific supervisor, and the research results were discussed with the co-authors.
+
+\underline{\textbf{Dissertation structure.}} % TODO: check after adding appendicies. % TODO: check spelling, e.g., page/pages
+The dissertation consists of~an abstract, introduction, \formbytotal{totalchapter}{chapter}{}{s}{}, conclusions, lists of abbreviations, figures, tables, and \formbytotal{totalappendix}{appendix}{}{es}{}. The full volume of the dissertation is \formbytotal{TotPages}{page}{}{s}{s} with \formbytotal{totalcount@figure}{}{figure}{figures}{figures} and \formbytotal{totalcount@table}{}{table}{tables}{tables}. The list of references contains \formbytotal{citenum}{source}{}{s}{}.
+%The thesis consists of an introduction, \totchapter chapters,  conclusion and three appendices.  The list of figures consists of \totfig\ items, the list of tables consists of \tottab\ items.
+%The dissertation consists of an introduction, [number] chapters, and a conclusion. The dissertation is [number] pages long, including [number] figures, [number] algorithms, and [number] tables. The list of references contains [number] titles including [number] of publications by the author.
+
+\underline{\textbf{Organization of the Dissertation.}}
+The \underline{Introduction} substantiates the relevance of the work, formulates the research goals and problems, outlines the scientific novelty, and describes the methodology and practical significance of the results.
+\underline{Chapter~\ref{chap:mri}} analyzes the internal sensitivity of convolutional neural networks to domain shifts in MRI segmentation. A gradient-based layer selection method (SpotTUnet) is proposed, allowing autonomous and interpretable fine-tuning under data-limited conditions.
+\underline{Chapter~\ref{chap:ct}} addresses domain shifts arising from reconstruction kernel variability. Two novel approaches are developed: a theoretically grounded augmentation method (FBPAug) and an unsupervised adaptation framework (F-Consistency), both demonstrating state-of-the-art performance and practical applicability in clinical imaging.
+\underline{Chapter~\ref{chap:da_bench}} introduces the large-scale M3DA benchmark for evaluating unsupervised domain adaptation in 3D medical image segmentation and presents the BGP dataset, offering a realistic “in-the-wild” validation scenario.
+\underline{Chapter~\ref{chap:ood_bench}}  develops an evaluation framework for OOD detection in medical images and proposes a computationally efficient method, IHF, which achieves top-ranked results in international challenges.
+The \underline{Conclusion} summarizes the main scientific results, their theoretical and practical significance, limitations, and outlines prospects for future research.
+% (Domain Shift Anatomy)
+% (Domain Adaptation in CT Images)
+% (Benchmark for Domain Adaptation)
+% (Benchmark for Out-of-Distribution Detection)
 
 
 
@@ -173,34 +148,7 @@ The credibility is also confirmed by two publications of research results in Q1 
 % All Skoltech theses have an abstract
 % One thesis had chapter summary at the end of each chapter. Looks like a good idea
 % Introduction is apparently just a regular chapter
-
 \input{common/characteristic}
 
-% \section*{Publications}
-
-% \paragraph{Thesis publications.} The thesis is based on the following four Q1 publications:
-
-% \begin{enumerate}
-%     \item \fullcite{lukashevich2021importance}
-%     \item \fullcite{lukashevich2021power}
-%     \item \fullcite{lukashevich2023importance}
-%     \item \fullcite{mitrovic2023data}
-% \end{enumerate}
-
-% In all the above papers, except the last one, the author was a principal contributor, who developed and implemented all listed algorithms, proved (in the third paper jointly with A. Bulkin) all supporting theorems and lemmas. In the last paper the applicant developed method for experimental section, took part in the developing comparison methodology.
-
-%\newpage
-% TODO: ???
-
-\section*{Acknowledgments} 
-The dissertation was completed at the {\thesisOrganizationEnNonTitle}.
-
-I would like to thank everyone who has supported me throughout my academic journey and during the preparation of this thesis.
-
-First and foremost, I am deeply thankful to my primary supervisor, Mikhail Belyaev, for his unwavering support and guidance during my Bachelor's, Master's, and Ph.D. studies. His insights into the research world and the knowledge he has shared have been invaluable in my academic and personal growth. Much of my scientific success is the result of our close collaboration and the work with his research team.
-
-I am also deeply thankful to my collaborators and co-authors, who have greatly contributed to my scientific journey (in alphabetical order): Alexandra Dalechina, Daria Frolova, Mikhail Goncharov, Egor Krivov, Anvar Kurmukov, Ivan Oseledets, Maxim Panov, Mikhail Pautov, Maxim Pisov, Talgat Saparov, Alexey Shevtsov, Anton Vasiliuk, and Ivan Zakazov. I am fortunate to have had the opportunity to work with and learn from such brilliant people.
-
-I am deeply thankful to my family for their constant help and belief in me.
 
 

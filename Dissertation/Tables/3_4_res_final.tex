@@ -50,45 +50,34 @@
 
 \begin{table}[h]
 	\centering
-	\caption{Comparison of all considered methods. The adaptation methods are trained using all training kernel pairs of the Paired-private dataset. F-/P-Cons stand for F-/P-Consistency, where F-Consistency is our proposed method. All results are Dice Scores in the format \textit{mean} $\pm$ \textit{std} calculated from $5$-fold cross-validation. We highlight the best scores in every column in \textbf{bold}. \label{tab:res_final}}
-	\resizebox{\textwidth}{!}{%
-	\begin{tabular}{lccccccc}
-		\toprule
-		
-		& \multirow{2.5}{*}{\textbf{COVID-train}} & \multirow{2.5}{*}{\textbf{COVID-test}} & \multicolumn{5}{c}{\textbf{Paired-Private} \textbf{Consistency}} \\
-		\cmidrule(lr){4-8}
-		& & & \textbf{FC07/55} & \textbf{FC07/51} & \textbf{SOFT/LUNG} & \textbf{STAND/LUNG}  & \textbf{Mean} \\
-		
-		
-		\midrule
-		Baseline & $\mathbf{0.60 \pm 0.04}$ & $0.56 \pm 0.03$ & $0.52 \pm 0.06$ & $0.39 \pm 0.07$ & $0.58 \pm 0.08$ & $0.28 \pm 0.05$ & $0.46 \pm 0.05$\\
-		
-		\cmidrule{1-8}
-		
-		FBPAug & $0.59 \pm 0.04$ & $0.62 \pm 0.03$ & $0.80 \pm 0.02$ & $0.71 \pm 0.03$ & $0.85 \pm 0.01$ & $0.65 \pm 0.03$ & $0.76 \pm 0.02$ \\
-		
-		
-		\cmidrule{1-8}
-		
-		%DANN (Dec) & $.57 \pm 0.04$ & $.61 \pm 0.04$ &  $.61 \pm 0.02$ & $.49 \pm 0.04$ & $.58 \pm 0.03$ & $.31 \pm 0.05$ & $.52 \pm 0.01$ \\
-		
-		%\cmidrule{1-8}
-		
-		DANN  & $0.58 \pm 0.05$ & $\mathbf{0.64 \pm 0.02}$ & $0.84 \pm 0.02$ & $0.70 \pm 0.02$ & $\mathbf{0.86 \pm 0.03}$ & $0.66 \pm 0.06$ & $0.78 \pm 0.02$ \\
-		
-		\cmidrule{1-8}
-		
-		P-Cons & $0.59 \pm 0.04$ & $0.61 \pm 0.01$ & $0.65 \pm 0.05$ & $0.60 \pm 0.02$ & $0.77 \pm 0.01$ & $0.47 \pm 0.04$ & $0.63 \pm 0.03$\\
-		
-		\cmidrule{1-8}
-		
-		
-		%F-Cons (Dec) & $\mathbf{.60 \pm 0.03}$ & $.58 \pm 0.02$ & $.62 \pm 0.05$ & $.54 \pm 0.03$ & $.75 \pm 0.01$ & $.40 \pm 0.06$ & $.58 \pm 0.02$ \\
-		
-		%\cmidrule{1-8}
-		
-		F-Cons &  $0.57 \pm 0.03$ & $\mathbf{0.64 \pm 0.03}$ & $\mathbf{0.88 \pm 0.01}$ & $\mathbf{0.72 \pm 0.04}$ & $0.83 \pm 0.02$ & $\mathbf{0.70 \pm 0.05}$ & $\mathbf{0.80 \pm 0.01}$ \\
-		
-		\bottomrule
-	\end{tabular}}
+	\caption{Comparison of all considered methods, trained using all kernel pairs of the Paired-private dataset. All results are Dice Scores in the format \textit{mean (std)}.}
+	\label{tab:res_final}
+	%\resizebox{\textwidth}{!}{%
+		\begin{tabular}{lcccccc}
+			\toprule
+			& \multirow{2.5}{*}{\shortstack{COVID-\\test}} & \multicolumn{5}{c}{Paired-private consistency} \\
+			\cmidrule(lr){3-7}
+			& & FC07/55 & FC07/51 & soft/lung & stnd/lung & mean \\
+			\midrule
+			
+			Baseline & 0.56(0.03) & 0.52(0.06) & 0.39(0.07) & 0.58(0.08) & 0.28(0.05) & 0.46(0.05) \\
+			
+			\cmidrule{1-7}
+			
+			P-Cons & 0.61(0.01) & 0.65(0.05) & 0.60(0.02) & 0.77(0.01) & 0.47(0.04) & 0.63(0.03) \\
+			
+			\cmidrule{1-7}
+			
+			FBPAug & 0.62(0.03) & 0.80(0.02) & 0.71(0.03) & 0.85(0.01) & 0.65(0.03) & 0.76(0.02) \\
+			
+			\cmidrule{1-7}
+			
+			DANN & \textbf{0.64(0.02)} & 0.84(0.02) & 0.70(0.02) & \textbf{0.86(0.03)} & 0.66(0.06) & 0.78(0.02) \\		
+			
+			\cmidrule{1-7}
+			
+			F-Cons & \textbf{0.64(0.03)} & \textbf{0.88(0.01)} & \textbf{0.72(0.04)} & 0.83(0.02) & \textbf{0.70(0.05)} & \textbf{0.80(0.01)} \\
+			
+			\bottomrule
+		\end{tabular}%}
 \end{table}

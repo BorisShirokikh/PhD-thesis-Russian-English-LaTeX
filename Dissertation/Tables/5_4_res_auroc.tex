@@ -1,12 +1,13 @@
 
 
-\begin{table}[h]
+\begin{landscape}
+\begin{table}[p]
 	\centering
-	\caption{Comparison of OOD detection methods in terms of AUROC scores (higher is better). We highlight the best scores in every row in \textbf{bold} and ranked the methods by their average performance. The first and second sections correspond to CT and MRI setups, respectively.}
-	\resizebox{\textwidth}{!}{%
+	\caption{Comparison of OOD detection methods in terms of AUROC scores (higher is better).The first and second sections correspond to CT and MRI setups, respectively.}% We highlight the best scores in every row in \textbf{bold} and ranked the methods by their average performance. 
+	%\resizebox{\linewidth}{!}{%
 		\begin{tabular}{llllllllll}
 			\toprule
-			\textbf{OOD Setup} &            \textbf{IHF-NN} &             \textbf{IHF-Mah} &             \textbf{SVD} &           \textbf{G-ODIN} &   \textbf{Volume} & \textbf{MOOD-1} &   \textbf{MCD} & \textbf{Ensemble} &   \textbf{Entropy} \\
+			OOD Setup &            IHF-NN &             IHF-Mah &             SVD &           G-ODIN &   Volume & MOOD-1 &   MCD & Ensemble &   Entropy \\
 			\midrule
 			Location (Head)           &  \textbf{1.0}  &  \textbf{1.0}  &  \textbf{1.0}  &            0.83 &  0.73 &       0.83 &  0.85 &     0.79 &  0.62 \\
 			Location (Liver)          &            0.89 &            0.85 &  \textbf{0.97}  &            0.88 &  0.65 &       0.61 &  0.42 &     0.45 &  0.67 \\
@@ -26,8 +27,7 @@
 			CT average                &  \textbf{0.88}  &            0.84 &            0.83 &            0.82 &  0.71 &       0.70 &  0.67 &     0.68 &  0.65 \\
 			MRI average               &  \textbf{0.97}  &  \textbf{0.97}  &            0.92 &            0.89 &  0.69 &       0.66 &  0.56 &     0.53 &  0.48 \\
 			\bottomrule
-		\end{tabular}  
-		
-	}
+		\end{tabular}%}
 	\label{tab:res_auroc}
 \end{table}
+\end{landscape}

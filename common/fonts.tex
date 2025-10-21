@@ -2,12 +2,12 @@
 \ifxetexorluatex
     \ifnumequal{\value{englishthesis}}{0}{
         % Язык по-умолчанию русский с поддержкой приятных команд пакета babel
-        \setmainlanguage[babelshorthands=true]{russian}
+        \setmainlanguage{russian}
         % Дополнительный язык = английский (в американской вариации по-умолчанию)
         \setotherlanguage{english}
     }{
         % I'm not sure if this actually does anything
-        \setmainlanguage[babelshorthands=true]{english}
+        \setmainlanguage{english}
         \setotherlanguage{russian}
     }
 

@@ -1,0 +1,39 @@
+
+
+\begin{landscape}
+\begin{table}[p]
+	\centering
+	\caption{Performance gain of different methods supplemented with nnU-Net augmentations.}
+	
+	%\resizebox{\linewidth}{!}{%
+		\begin{tabular}{lcccccccccc}
+			\toprule
+			& MR$\ra$CT & CT$\ra$MR & LDCT & CE CT & T1 CE & T1 F & T1 Sc & T1 Mix & \textit{avg DSC} & \textit{gap (\%)} \\
+			
+			\midrule
+			
+			CycleGAN 3D & $\uparrow$0.031 & $\uparrow$0.200 & $\uparrow$0.353 & $\uparrow$0.091 & $\uparrow$0.034 & $\uparrow$0.034 & $\uparrow$0.097 & $\uparrow$0.017 & $\uparrow$0.107 & 34.1 $\uparrow$24.6 \\
+			
+			CycleGAN 2D & $\uparrow$0.096 & $\uparrow$0.055 & $\uparrow$0.136 & $\uparrow$0.117 & $\uparrow$0.018 & $\uparrow$0.013 & $\uparrow$0.049 & $\uparrow$0.020 & $\uparrow$0.063 & 45.5 $\uparrow$15.3 \\
+			
+			Baseline & $\uparrow$0.134 & $\uparrow$0.070 & $\uparrow$0.646 & $\uparrow$0.164 & $\uparrow$0.020 & $\uparrow$0.169 & $\uparrow$0.131 & $\uparrow$0.329 & $\uparrow$0.208 & 51.9 $\uparrow$51.9 \\
+			
+			DANN        & $\uparrow$0.118 & $\uparrow$0.071 & $\uparrow$0.110 & $\uparrow$0.002 & $\downarrow$-0.013 & $\uparrow$0.169 & $\uparrow$0.015 & $\uparrow$0.109 & $\uparrow$0.072 & 54.9 $\uparrow$23.3 \\
+			
+			IN          & $\uparrow$0.119 & $\uparrow$0.163 & $\uparrow$0.128 & $\downarrow$-0.017 & $\downarrow$-0.012 & $\uparrow$0.151 & $\uparrow$0.016 & $\uparrow$0.099 & $\uparrow$0.081 & 58.1 $\uparrow$26.6 \\
+			
+			AdaBN       & $\uparrow$0.173 & $\uparrow$0.179 & $\uparrow$0.017 & $\uparrow$0.070 & $\uparrow$0.021 & $\uparrow$0.129 & $\uparrow$0.057 & $\uparrow$0.096 & $\uparrow$0.092 & 59.2 $\uparrow$24.2 \\
+			
+			SE          & $\uparrow$0.068 & $\uparrow$0.183 & $\uparrow$0.165 & $\uparrow$0.057 & $\downarrow$-0.014 & $\downarrow$-0.004 & $\uparrow$0.014 & $\downarrow$-0.030 & $\uparrow$0.055 & 60.1 \enspace $\uparrow$8.4 \\
+			
+			MinEnt      & $\uparrow$0.248 & $\uparrow$0.190 & $\uparrow$0.283 & $\uparrow$0.057 & $\uparrow$0.019 & $\uparrow$0.133 & $\uparrow$0.103 & $\uparrow$0.116 & $\uparrow$0.143 & \textbf{62.0} $\uparrow$33.5 \\
+			
+			\midrule
+			
+			\textit{average} &$\uparrow$0.123 & $\uparrow$0.139 & $\uparrow$0.230 & $\uparrow$0.068 & $\uparrow$0.009 & $\uparrow$0.099 & $\uparrow$0.060 & $\uparrow$0.095 & $\uparrow$0.103 & $\uparrow$26.0 \\  % 53.2\%
+			
+			\bottomrule
+	\end{tabular}%}
+	\label{tab:ablation_aug}
+\end{table}
+\end{landscape}

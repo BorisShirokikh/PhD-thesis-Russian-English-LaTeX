@@ -4,15 +4,15 @@
 \begin{table}[ht]
 	\centering
 	\caption{Fechner correlation coefficients between IHF-NN, Volume and the other studied methods' performance.}
-	\resizebox{\textwidth}{!}{%
-		\begin{tabular}{llllllllll}
+	%\resizebox{\textwidth}{!}{%
+		\begin{tabular}{lccccccccc}
 			\toprule
 			% Base method
-			&  \textbf{IHF-NN} & \textbf{SVD} & \textbf{IHF-M} & \textbf{MOOD} & \textbf{GODIN} & \textbf{Vol} & \textbf{MCD} & \textbf{Ens} & \textbf{Ent} \\
+			&  IHF-NN & SVD & IHF-M & MOOD & Godin & Vol & MCD & Ens & Ent \\
 			\midrule
-			IHF-NN           &  1.00 & 0.38 & \textbf{0.85} & 0.23 & $-$0.08 & 0.23 & 0.08 & $-$0.08 & $-$0.23 \\
+			IHF-NN           &  1.00 & 0.38 & \textbf{0.85} & 0.23 & -0.08 & 0.23 & 0.08 & -0.08 & -0.23 \\
 			Volume          &   0.23 & \textbf{0.54} & 0.38 & 0.38 & 0.38 & 1.00 & 0.23 & 0.08 & 0.23  \\
 			\bottomrule
-	\end{tabular}}
+	\end{tabular}%}
 	\label{tab:res_corr}
 \end{table}

@@ -1,13 +1,10 @@
 
-
-
-
-% \citeyear{gin}, 
-\begin{table*}
+\begin{landscape}
+\begin{table}[h]
 	\centering
-	\caption{Main results on our benchmark in terms of multiclass average Dice score, where background label is excluded from quantification. The best results in each column are highlighted in \textbf{bold}. Case-wise standard deviations for these experiments are provided in parentheses. Foundational models UniModel and SAM-Med3D were finetuned in the baseline setting, similar to U-Net.}
-	
-	\resizebox{\textwidth}{!}{%
+	\caption{Main results on our benchmark in terms of multiclass average Dice score.}
+	\label{tab:metrics_pure}
+	%\resizebox{\linewidth}{!}{%
 		\begin{tabular}{lcccccccccc}
 			\toprule
 			& MR$\rightarrow$CT & CT$\rightarrow$MR & CT$\rightarrow$LDCT & CE CT$\rightarrow$CT & T1 CE$\rightarrow$T1 & T1 F & T1 Sc & T1 Mix & \textit{avg DSC} & \textit{avg gap} \\
@@ -47,18 +44,14 @@
 			
 			nnAugm \cite{nnunet} & 0.166 (0.125) & 0.102 (0.090) & \textbf{0.779 (0.103)} & 0.392 (0.315) & \textbf{0.446 (0.164)} & \textbf{0.910 (0.010)} & 0.897 (0.012) & 0.889 (0.012) & 0.573 & 51.9\% \\
 			
-			% nnUNet          & 0.397 & 0.355 & 0.750 & 0.373 & 0.330 & 0.923 & 0.914 & 0.907 & 0.619 & 54.9\% \\
-			
-			% \midrule
-			
-			% best in setup & 0.589 & 0.637 & 0.779 & 0.470 & 0.446 & 0.910 & 0.910 & 0.918 & 0.704 & 72.9\% \\
-			
 			\midrule
 			
 			U-Net (Oracle)        & 0.842 (0.092) & 0.826 (0.035) & 0.814 (0.095) & 0.519 (0.297) & 0.686 (0.178) & 0.954 (0.017) & 0.957 (0.012) & 0.958 (0.009) & 0.820 & 100.0\% \\
 			
 			\bottomrule
 			
-	\end{tabular}}
-	\label{tab:metrics_pure}
-\end{table*}
+	\end{tabular}%}
+	
+\end{table}
+\end{landscape}
+

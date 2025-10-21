@@ -4,14 +4,17 @@
 \chapter{Mitigating Domain Shift from CT Reconstruction Kernels}
 \label{chap:ct}
 
-Domain shift is one of the most salient challenges in medical computer vision. Due to immense variability in scanners’ parameters and imaging protocols, even images obtained from the same person and the same scanner could differ significantly. In this chapter, we consider variability in computed tomography (CT) images caused by different convolution kernels used in the reconstruction process, the critical domain shift factor in CT. The choice of convolution kernel affects pixel granularity, image smoothness, and noise levels, resulting in images that, while anatomically identical, differ in style.
+%Domain shift is one of the most salient challenges in medical computer vision. Due to immense variability in scanners’ parameters and imaging protocols, even images obtained from the same person and the same scanner could differ significantly.
+In this chapter, we consider variability in computed tomography (CT) images caused by different convolution kernels used in the reconstruction process, the critical domain shift factor in CT. The choice of convolution kernel affects pixel granularity, image smoothness, and noise levels, resulting in images that, while anatomically identical, differ in style.
 
 We analyze several datasets of paired CT images where smooth and sharp images were reconstructed from the same sinograms using different kernels. Despite identical anatomy, the consistency between predictions on these paired images is surprisingly low, with an average Dice score of just $0.46$. Furthermore, we observe a significant decline in COVID-19 segmentation accuracy when models are trained and tested on different reconstruction kernels.
 
 To address this domain shift, we propose two methods. The first is Filtered Back-Projection Augmentation (FBPAug), a novel knowledge-driven augmentation technique designed to simulate domain shifts associated with varying reconstruction kernels. \text{FBPAug} improves prediction consistency from a Dice score of $0.46$ to $0.76$, surpassing other augmentation methods. The second method, F-Consistency, is an unsupervised domain adaptation (DA) approach that leverages paired, unlabeled CT images reconstructed with different kernels. This method enforces similarity in the network’s hidden representations by minimizing the mean squared error (MSE) between feature maps of paired images. Given sufficient paired data, F-Consistency further enhances prediction consistency to a Dice score of $0.80$, outperforming FBPAug, other unsupervised DA methods, and demonstrating superior generalization to unseen kernels.
 
+The results presented in this chapter are based on the author’s publications~\cite{saparov2021zero,shimovolos2022adaptation}.
 
-\section{Introduction}
+
+\section{Background}
 
 Computed tomography (CT) is a widely used method for medical imaging. CT images are reconstructed from the raw acquisition data, represented in the form of a sinogram. Sinograms are two-dimensional profiles of tissue attenuation as a function of the scanner's gantry angle. Here, one of the most common reconstruction algorithms is Filtered Back Projection (FBP) \cite{schofield2020image}. This algorithm has an important free parameter called \textit{convolution kernel}. The choice of a convolution kernel defines a trade-off between image smoothness and noise level \cite{schaller2003spatial}. Reconstruction with a high-resolution kernel yields \textit{sharp} pixels and a high noise level. In contrast, usage of a lower-resolution kernel results in \textit{smooth} pixels and a low noise level. Depending on the clinical purpose, radiologists use different kernels for image reconstruction.
 
@@ -26,18 +29,18 @@ The first proposed method is FBP Augmentation (FBPAug), a novel augmentation met
 
 We note that the large pools of unlabeled chest CT image pairs which differ only in reconstruction kernels within every pair are publicly available, e.g., \cite{morozov2021simplified}. The intuition here is that the adaptation methods should outperform the augmentation one when a broader range of real-world data is available. Specifically, in such conditions, we propose the second method which enforces the cross-domain feature maps consistency between paired images; we call our method F-Consistency. F-Consistency minimizes the mean squared error (MSE) between the network’s hidden representations (feature maps) of paired images. We expect that explicitly enforcing consistency on the paired images should outperform the adversarial learning that emulates similar behavior minimizing the adversarial loss.
 
-Our work highlights a domain shift problem in the COVID-19 segmentation task and suggests an efficient solution to this problem. These are our three main contributions:
-% We summarize our three main contributions as follows:
-
-\begin{itemize}
-	
-	\item Firstly, we demonstrate that the difference in CT reconstruction kernels affects the segmentation quality of COVID-19 lesions. The model without adaptation achieves only a $0.56$ Dice Score on the unseen domain, while the best adaptation methods scores $0.64$. In terms of similarity between predictions on the paired images, the baseline Dice Score is $0.46$, which is almost two times lower than the $0.80$ achieved by our method.
-	
-	\item Secondly, we propose FPBAug, a knowledge-driven and efficient approach to augment CT images in sinogram space, emulating reconstruction with different kernels. We show that our method outperforms other augmentation approaches. Moreover, neither specific preparation of source domain data nor target domain data is required, so our publicly released \href{https://github.com/STNLd2/FBPAug}{FBPAug} can be used as a plug-and-play module for zero-shot domain adaptation in CT-based tasks.
-	
-	\item Thirdly, we propose the flexible adaptation approach that outperforms the other considered methods when provided with enough unlabeled data. We also show that our method better generalizes to unseen CT reconstruction kernels and it is less sensitive to the absence of the semantic content (COVID-19 lesions) than the other methods trained on unlabeled data.
-	
-\end{itemize}
+%Our work highlights a domain shift problem in the COVID-19 segmentation task and suggests an efficient solution to this problem. These are our three main contributions:
+%% We summarize our three main contributions as follows:
+%
+%\begin{itemize}
+%	
+%	\item Firstly, we demonstrate that the difference in CT reconstruction kernels affects the segmentation quality of COVID-19 lesions. The model without adaptation achieves only a $0.56$ Dice Score on the unseen domain, while the best adaptation methods scores $0.64$. In terms of similarity between predictions on the paired images, the baseline Dice Score is $0.46$, which is almost two times lower than the $0.80$ achieved by our method.
+%	
+%	\item Secondly, we propose FPBAug, a knowledge-driven and efficient approach to augment CT images in sinogram space, emulating reconstruction with different kernels. We show that our method outperforms other augmentation approaches. Moreover, neither specific preparation of source domain data nor target domain data is required, so our publicly released \href{https://github.com/STNLd2/FBPAug}{FBPAug} can be used as a plug-and-play module for zero-shot domain adaptation in CT-based tasks.
+%	
+%	\item Thirdly, we propose the flexible adaptation approach that outperforms the other considered methods when provided with enough unlabeled data. We also show that our method better generalizes to unseen CT reconstruction kernels and it is less sensitive to the absence of the semantic content (COVID-19 lesions) than the other methods trained on unlabeled data.
+%	
+%\end{itemize}
 
 
 \section{Methods}
@@ -45,40 +48,66 @@ Our work highlights a domain shift problem in the COVID-19 segmentation task and
 \subsection{Filtered Back-Projection Augmentation}
 
 
-Firstly, we give a background on a discrete version of inverse Radon Transform -- Filtered Back-Projections algorithm. FBP consists of two sequential operations: generation of filtered projections and image reconstruction by the Back-Projection (BP) operator.
+We begin by recalling the discrete formulation of the inverse Radon transform, known as the Filtered Back-Projection (FBP) algorithm. In analytical Computed Tomography (CT), FBP provides an explicit inversion of the projection operator under the assumption of parallel-beam geometry. The algorithm consists of two consecutive operations: (i) filtering of the measured projection data, and (ii) reconstruction of the attenuation map by the Back-Projection (BP) operator. In the continuous setting, both operations correspond to well-defined integral transforms, whereas in practice they are implemented in discrete form for a finite set of projection angles.
 
-Projections of attenuation map have to be filtered before using them as an input of the Back-Projection operator. The ideal filter in a continuous noiseless case is the ramp filter. Fourier transform of the ramp filter $\kappa(t)$ is $\mathcal{F}[\kappa(t)](w) = |w|$.
+In the ideal continuous case, reconstruction requires filtering the projection data prior to back-projection in order to compensate for the frequency attenuation inherent in the Radon transform. The optimal filter in the noise-free setting is the so-called \textit{ramp filter}, whose frequency response grows linearly with spatial frequency, thereby restoring high-frequency components corresponding to sharp tissue boundaries. Denoting the ramp kernel by $\kappa(t)$, its Fourier transform is given by
 
-The image $I(x, y)$ can be derived as follows:
-\begin{equation}
-	\label{eqn:main_eq}
-	I(x, y) = \text{FBP}(p_\theta(t)) = \text{BP}(p_\theta(t) * \kappa(t)),
-\end{equation}
-where $*$ is a convolution operator and $t = t(x,y) = x\cos\theta + y\sin\theta$.% and $\kappa(t)$ is the aforementioned ramp filter.
-
-Assume that a set of filtered-projections $p_{\theta}(t)$ available at angles $\theta_1, \theta_2, ..., \theta_n$, such that $\theta_i = \theta_{i - 1} + \Delta\theta,~i=\overline{2,n}$ and $\Delta\theta = \pi / n$. In that case, BP operator transforms a function $f_\theta(t) = f(x\cos\theta + y\sin\theta)$ as follows:
 \[
-BP(f_\theta(t))(x, y) = \frac{\Delta\theta}{2\pi}\sum\limits_{i=1}^n f_{\theta_i}(x\cos\theta_i + y\sin\theta_i) = \frac{1}{2n}\sum\limits_{i=1}^n f_{\theta_i}(x\cos\theta_i + y\sin\theta_i)
+\mathcal{F}[\kappa(t)](w) = |w|.
 \]
 
-In fact, $\kappa(t)$ that appears in (\ref{eqn:main_eq}) is a generalized function and cannot be expressed as an ordinary function because the integral of $|w|$ in inverse Fourier transform does not converge. However, we utilize the convolution theorem that states that $\mathcal{F}(f*g) = \mathcal{F}(f)\cdot\mathcal{F}(g)$. And after that we can use the fact that the BP operator is a finite weighted sum and Fourier transform is a linear operator as follows:
+This ideal filter amplifies high-frequency components and is thus highly sensitive to noise, motivating the use of smoothed or modified filters in practical CT systems.
+
+Under these assumptions, the reconstructed attenuation map, i.e., image, $I(x, y)$ is obtained as
+
+\begin{equation}
+	\label{eq:main_eq}
+	I(x, y) = \text{FBP}(p_\theta(t)) = \text{BP}(p_\theta(t) * \kappa(t)),
+\end{equation}
+
+\noindent
+where $t = t(x,y) = x\cos\theta + y\sin\theta$ and $*$ denotes convolution along the detector coordinate. This expression follows directly from the Fourier Slice Theorem, which relates the 1D Fourier transform of a projection to a central slice of the 2D Fourier transform of the original image. And $p_{\theta} (t) = \mathcal{R}[I](t, \theta)$ denote the projection (Radon transform) of the image at angle $\theta$.
+
+In the discrete case, let a finite set of projection angles be given by $\theta_i = (i - 1) \Delta \theta$, with uniform spacing $\Delta \theta = \pi / n$. The discrete Back-Projection operator acts on a family of filtered projections $\{ p_{\theta_i} (t)\}_{i=1}^n$, as
+
+\[
+BP(p_\theta(t))(x, y) = \frac{\Delta\theta}{2\pi}\sum\limits_{i=1}^n p_{\theta_i}(x\cos\theta_i + y\sin\theta_i) \approx \frac{1}{2n}\sum\limits_{i=1}^n p_{\theta_i}(x\cos\theta_i + y\sin\theta_i),
+\]
+
+\noindent
+where the normalization ensures that the discrete operator approximates the continuous integral over $[0, \pi)$.
+
+It is important to note that the ramp kernel $\kappa(t)$ in \eqref{eq:main_eq} is a generalized function and cannot be expressed as an ordinary function because the integral of $|w|$ in inverse Fourier transform does not converge. Nevertheless, practical implementation relies on the convolution theorem, $\mathcal{F}(f*g) = \mathcal{F}(f)\cdot\mathcal{F}(g)$, and on the linearity of both the Fourier and Back-Projection (finite weighted sum) operators, which allows one to write
+
 \[
 \mathcal{F}^{-1}\mathcal{F}[I(x, y)] = \mathcal{F}^{-1}\mathcal{F}[\text{BP}(p_\theta * \kappa)] = \text{BP}(\mathcal{F}^{-1}\mathcal{F}[p_\theta * \kappa]) = \text{BP}(\mathcal{F}^{-1}\{\mathcal{F}[p_\theta]\cdot|w|\}),\]
 \[I(x, y) = \text{BP}\left(\mathcal{F}^{-1}\{\mathcal{F}[p_\theta]\cdot|w|\}\right).\]
 
-However, in the real world, CT manufacturers use different filters that enhance or weaken the high or low frequencies of the signal. We propose a family of convolution filters $k_{a,b}$ that allows us to obtain a smooth-filtered image given a sharp-filtered image and vice versa. Fourier transform of the proposed filter is expressed as follows:
-\[\mathcal{F}[k_{a,b}](w) = \mathcal{F}[\kappa](w)(1 + a \mathcal{F}[\kappa](w)^b) = |w|(1 + a|w|^b).\]
+In real CT systems, the ideal ramp filter is replaced by a family of empirical filters that modulate the frequency response to suppress noise or enhance edges, commonly referred to as reconstruction kernels (e.g., ``soft'', ``standard'', or ``bone'' kernels). However, the exact analytical form of these kernels remains proprietary, as it constitutes part of the intellectual property of CT manufacturers.
 
-Thus, given a CT image $I$ obtained from a set of projections using one kernel, we can simulate the usage of another kernel as follows:
-\[\hat{I}(x, y) = \text{BP}\left(\mathcal{F}^{-1}\{\mathcal{F}[\mathcal{R}(I)]\cdot\mathcal{F}[k_{a,b}]\}\right).\]
+But now, as the application of convolution filters in the frequency domain is mathematically defined, we can construct our own parametric family of kernels that approximate this behavior. This family allows for continuous control over the degree of sharpness or smoothness in the reconstructed image and provides an interpretable and reproducible alternative to vendor-specific filters.
 
-Here, $a$ and $b$ are the parameters that influence the sharpness or smoothness of an output image and $\mathcal{R}(I)$ is a Radon transform of image $I$. The output of the Radon transform is a set of projections. Fig. \ref{fig:crops} shows an example of applying sharping augmentation on a soft kernel image (Fig. \ref{fig:crops}(a) to (c)) and vice versa: applying softening augmentation on a sharp kernel image (Fig. \ref{fig:crops}(b) to (d)). 
+We propose a family of convolution kernels $k_{a,b}$ with the following Fourier transform:
+
+\[\mathcal{F}[k_{a,b}](w) = \mathcal{F}[\kappa](w)(1 + a \mathcal{F}[\kappa](w)^b) = |w|(1 + a|w|^b),\]
+
+\noindent
+where $a \in \R$ controls the degree of enhancement and $b > 0$ determines the spectral roll-off. For $a > 0$ and larger $b$, high frequencies are amplified, producing sharper images; for $a < 0$, the response is damped, yielding smoother reconstructions.
+
+Finally, given a CT image $I$ reconstructed with an unknown or fixed kernel, we simulate its appearance under another kernel by applying the inverse Radon-transform-based operator
+
+\[\hat{I}(x, y) = \text{BP}\left(\mathcal{F}^{-1}\{\mathcal{F}[\mathcal{R}(I)]\cdot\mathcal{F}[k_{a,b}]\}\right),\]
+
+\noindent
+where $\mathcal{R}(I)$ denotes the Radon transform of the image. Unlike purely spatial convolution augmentations, this formulation operates in the projection domain and therefore preserves the physical consistency of the CT acquisition model. Figure~\ref{fig:crops} illustrates the effect of applying sharpening augmentation to a soft-kernel image (Figure~\ref{fig:crops}(a) to (c)) and vice versa (Figure~\ref{fig:crops}(b) to (d)). The resulting images remain physically plausible while exhibiting controlled variations in contrast and edge sharpness, which enhances the robustness of downstream learning models to variations in reconstruction protocol.
+
+%Here, $a$ and $b$ are the parameters that influence the sharpness or smoothness of an output image and $\mathcal{R}(I)$ is a Radon transform of image $I$. The output of the Radon transform is a set of projections. Fig. \ref{fig:crops} shows an example of applying sharping augmentation on a soft kernel image (Fig. \ref{fig:crops}(a) to (c)) and vice versa: applying softening augmentation on a sharp kernel image (Fig. \ref{fig:crops}(b) to (d)). 
 
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{Dissertation/Figures/3_ct/4crops.png}%[width=7cm][width=7cm]
-	\caption{An example of paired CT slices (top row) and the effect of the augmentation by the proposed method (bottom row).  The top row contains original images: a slice reconstructed either with a smooth kernel (a) or sharp kernel (b). The bottom row shows augmented images: the top-left image processed by FBPAug with parameters $a=30,~b=3$ shifting it from smooth to sharp (c); the top-right image processed by FBPAug with parameters $a=-1,~b=0.7$ from sharp to smooth (d).}
+	\includegraphics[width=\linewidth]{Dissertation/Figures/3_ct/4crops.png}%[width=7cm][width=7cm]
+	\caption{\textbf{An example of paired CT slices (top row) and the effect of the augmentation by the proposed method (bottom row).} The top row contains original images: a slice reconstructed either with a smooth kernel (a) or sharp kernel (b). The bottom row shows augmented images: the top-left image processed by FBPAug with parameters $a=30,~b=3$ shifting it from smooth to sharp (c); the top-right image processed by FBPAug with parameters $a=-1,~b=0.7$ from sharp to smooth (d).}
 	\label{fig:crops}
 \end{figure}
 
@@ -89,7 +118,7 @@ We train all segmentation methods using the annotated dataset $S_s = \{ ( x_i, y
 
 Adaptation methods use additional paired dataset $S_2 = \{ ( x_i, \tilde{x}_i ) \}_{i=1}^{N_2}$, which has no annotations. However, every image $x \in S_2$ has a paired image $\tilde{x}$ reconstructed from the same sinogram but with a different kernel. Here, we assume that $x$ belongs to the source domain and $\tilde{x}$ belongs to the target domain.
 
-Similar to the adversarial approaches (e.g., \cite{ganin2015unsupervised}), we propose to remove style-specific kernel information from the feature maps. However, we additionally exploit the paired nature of the unlabeled dataset $S_2$. Instead of the adversarial loss, we minimize the distance between feature maps of paired images. Let us denote feature extractor $H_f$, the part of segmentation model that maps input images $x$ into the feature space, and segmentation head $H_p$, the complement part of segmentation model that predicts binary mask $\hat{y} = H_p \left( H_f \left( x \right) \right)$. Further, we denote the feature vector for every image $x$ as $f$, $f = H_f (x; \: \theta_f)$. For the paired image $\tilde{x}$, we use the similar notation $\tilde{f}$. In Figure~\ref{fig:method_schematic}, $H_f$ and $H_p$ correspond to the encoder and decoder parts of the model, respectively.
+Similar to the adversarial approaches (e.g., \cite{ganin2015unsupervised}), we propose to remove style-specific kernel information from the feature maps. However, we additionally exploit the paired nature of the unlabeled dataset $S_2$. Instead of the adversarial loss, we minimize the distance between feature maps of paired images. Let us denote feature extractor $H_f$, the part of segmentation model that maps input images $x$ into the feature space, and segmentation head $H_p$, the complement part of segmentation model that predicts binary mask $\hat{y} = H_p \left( H_f \left( x \right) \right)$. Further, we denote the feature vector for every image $x$ as $f$, $f = H_f (x; \: \theta_f)$. For the paired image $\tilde{x}$, we use the similar notation $\tilde{f}$.%In Figure~\ref{fig:method_schematic}, $H_f$ and $H_p$ correspond to the encoder and decoder parts of the model, respectively.
 
 During the training, we minimize the sum of segmentation loss and distance between paired features ($f$ and $\tilde{f}$). Thus, the optimization problem is
 \begin{align}
@@ -101,21 +130,23 @@ During the training, we minimize the sum of segmentation loss and distance betwe
 	\end{split} \\
 	(\hat{\theta}_f, \hat{\theta}_p) & = \argmin_{\theta_f, \theta_p} E(\theta_f, \theta_p),
 \end{align}
-where $L_s$ is the segmentation loss (Binary Cross-Entropy) and $L_c$ is the \textit{consistency} loss. For the consistency loss, we use mean squared error (MSE) between paired feature maps. Parameter $\alpha$ regulates the trade-off between two objectives. We call this method \textit{F-Consistency} since it enforces the consistency between paired feature maps.
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/3_ct/method_schematic_4.pdf}
-	\caption{Schematic representation of the proposed method, \textit{\textbf{F-Consistency}} (\textbf{5}), and its competitors, \textit{P-Consistency} (\textbf{4}) and \textit{DANN} (\textbf{6}). All methods build upon the same U-Net architecture, which we train to segment the COVID-19 binary mask (\textbf{1}) from the axial slices of chest CT images (\textbf{2}). These adaptation methods use unlabeled paired data (\textbf{3}) to improve the model performance on the target domain. We show the flow and different usage of the paired data in different methods with green.\label{fig:method_schematic}}
-	%In the image, \textit{DANN} and \textit{F-Consistency} operate with the encoder layers but can be easily extended to the %decoder versions.
-\end{figure}
+where $L_s$ is the segmentation loss (Binary Cross-Entropy) and $L_c$ is the consistency loss. For the consistency loss, we use mean squared error (MSE) between paired feature maps. Parameter $\alpha$ regulates the trade-off between two objectives. We call this method \textit{F-Consistency} since it enforces the consistency between paired feature maps.
 
 We present our method schematically in Figure~\ref{fig:method_schematic}(5) along with the competitive approaches, e.g., Domain Adversarial Neural Network (DANN) \cite{ganin2015unsupervised}. Note that we do not need any additional model as discriminator in DANN in the case of F-Consistency. The features are aggregated from the same encoder layers as in DANN.
 
+\begin{landscape}
+\begin{figure}[p]
+	\centering
+	\includegraphics[width=\linewidth]{Dissertation/Figures/3_ct/method_schematic_4.pdf}
+	\caption{Schematic representation of the proposed method, \textit{\textbf{F-Consistency}} (\textbf{5}), and its competitors, \textit{P-Consistency} (\textbf{4}) and \textit{DANN} (\textbf{6}). All methods build upon the same U-Net architecture, which we train to segment the COVID-19 binary mask (\textbf{1}) from the axial slices of chest CT images (\textbf{2}). These adaptation methods use unlabeled paired data (\textbf{3}) to improve the model performance on the target domain. We show the flow and different usage of the paired data in different methods with green.\label{fig:method_schematic}}
+	%In the image, \textit{DANN} and \textit{F-Consistency} operate with the encoder layers but can be easily extended to the %decoder versions.
+\end{figure}
+\end{landscape}
 
-\subsubsection{Cross-Domain Predictions Consistency}
+\subsection{Cross-Domain Predictions Consistency}
 
 A special case of F-Consistency is enforcing the consistency of paired predictions as the predictions are de facto the feature maps of the last network layer. This approach is proposed in \cite{orbes2019multi} also in the context of medical image segmentation. Further, we denote this method \textit{P-Consistency}. Visually, it could be compared with DANN and F-Consistency in Figure~\ref{fig:method_schematic}(4). The optimization problem is the same as in Equation~(\ref{eq:f-consistency_opt}), except $L_c$ is Dice Loss \cite{milletari2016v} and $f$ and $\tilde{f}$ are the last layer features, i.e., predictions.
+
 
 
 \section{Data}
@@ -131,23 +162,15 @@ We use three publicly available datasets to train and test the segmentation algo
 
 \input{Dissertation/Tables/3_1_segm_data}
 
-
-\subsubsection{COVID-Train}
-%\label{sssec:data:segm:train}
-
-\paragraph{Mosmed-1110} This dataset consists of $1110$ chest CT scans collected in Moscow clinics during the first months of $2020$ \cite{morozov2020mosmeddata}. Scanning was performed on \textit{Canon (Toshiba) Aquilion 64} units using the standard scanner's protocol: inter-slice distance of $0.8$ mm and smooth reconstruction kernels in particular. However, the public version of Mosmed-1110 contains every $10th$ slice of the original series, which makes the resulting slice distance equal to $8.0$ mm. Additionally, the $50$ series have annotated binary masks depicting COVID-19 lesions (ground-glass opacity and consolidation). We use only these $50$ images in our experiments.
+\textbf{Mosmed-1110.} This dataset consists of $1110$ chest CT scans collected in Moscow clinics during the first months of $2020$ \cite{morozov2020mosmeddata}. Scanning was performed on \textit{Canon (Toshiba) Aquilion 64} units using the standard scanner's protocol: inter-slice distance of $0.8$ mm and smooth reconstruction kernels in particular. However, the public version of Mosmed-1110 contains every $10th$ slice of the original series, which makes the resulting slice distance equal to $8.0$ mm. Additionally, the $50$ series have annotated binary masks depicting COVID-19 lesions (ground-glass opacity and consolidation). We use only these $50$ images in our experiments.
 % Also, as one of the preprocessing steps, we crop images to lung masks. However, lungs are not annotated in the dataset. We obtain the lung masks using a standalone algorithm; see details in Section~\ref{ssec:exp:covid_segm}.
 
 
-\paragraph{MIDRC} MIDRC-RICORD-1a is the publicly available dataset that contains $120$ chest CT studies \cite{tsai2021rsna}. The total number of volumetric series is $154$. According to the DICOM entries, {all} images have smooth reconstruction kernels. The dataset contains at least $12$ paired images (without considering the studies that contain more than two series). But we do not use these pairs to enforce consistency since both images have smooth kernels. Also, we use only the images that have non-empty annotations. The images that have empty binary masks of COVID-19 are discarded from both of the datasets. The resulting training dataset consists of $112$ volumetric images with smooth kernels.
+\textbf{MIDRC.} MIDRC-RICORD-1a is the publicly available dataset that contains $120$ chest CT studies \cite{tsai2021rsna}. The total number of volumetric series is $154$. According to the DICOM entries, {all} images have smooth reconstruction kernels. The dataset contains at least $12$ paired images (without considering the studies that contain more than two series). But we do not use these pairs to enforce consistency since both images have smooth kernels. Also, we use only the images that have non-empty annotations. The images that have empty binary masks of COVID-19 are discarded from both of the datasets. The resulting training dataset consists of $112$ volumetric images with smooth kernels.
 % Also, the original dataset does not contain annotated lung masks. Therefore, similarly to \textit{Mosmed-1110}, we predict the lung masks with our standalone algorithm.
 % All studies were performed using \textit{Phillips} scanner.
 
-
-\subsubsection{COVID-Test}
-%\label{sssec:data:segm:test}
-
-\paragraph{Medseg-9} MedSeg website ({\url{https://medicalsegmentation.com/covid19/}} (accessed on 24 August 2022)) shares a publicly available dataset with $9$ annotated chest CT images from {Radiopaedia.org} ({\url{https://radiopaedia.org/articles/covid-19-3}} (accessed on 19 August 2024)), reconstructed with sharp kernels.% Contrary to the COVID-train dataset, Medseg-9 contains annotated lung masks. However, we find the masks predicted by our algorithm more precise and use the predicted ones.
+\textbf{Medseg-9.} MedSeg website ({\url{https://medicalsegmentation.com/covid19/}} (visited on 08/24/2022)) shares a publicly available dataset with $9$ annotated chest CT images from {Radiopaedia.org} ({\url{https://radiopaedia.org/articles/covid-19-3}} (visited on 08/19/2024)), all reconstructed with sharp kernels.
 
 
 \subsection{Paired Images Data}
@@ -162,18 +185,14 @@ From Cancer-500, we build the Paired-public dataset and use it only to train the
 Both datasets do not contain any COVID-19 annotations and we do not need them since we use these datasets in unsupervised training.
 
 
-\subsubsection{Paired-public}
+\textbf{Paired-public dataset.} We build the Paired-public using a publicly available dataset, Cancer-500 \cite{morozov2021simplified}. The data was collected from $536$ randomly selected patients of Moscow clinics in 2018. All original images were obtained using a Toshiba scanner and reconstructed with FC07, FC51, or FC55 kernels. Here, FC07 is a smooth reconstruction kernel, whereas FC51 and FC55 are sharp kernels. From $536$ studies, we extracted $120$ pairs, comparing the shape and acquisition time of the corresponding DICOM series and filtering contrast-enhanced cases. As a result, the Paired-public dataset consists of $98$ FC07/FC51 and $22$ FC07/FC55 pairs. We use this dataset to train the domain adaptation algorithms on paired images. % 970 series. Details are provided in Tab.
 
-We build the Paired-public using a publicly available dataset, Cancer-500 \cite{morozov2021simplified}. The data was collected from $536$ randomly selected patients of Moscow clinics in 2018. All original images were obtained using a \textit{Toshiba} scanner and reconstructed with FC07, FC51, or FC55 kernels. Here, FC07 is a \textit{smooth} reconstruction kernel, whereas FC51 and FC55 are \textit{sharp} kernels. From $536$ studies, we extracted $120$ pairs, comparing the shape and acquisition time of the corresponding DICOM series and filtering contrast-enhanced cases. As a result, the \textit{Paired-public} dataset consists of $98$ FC07/FC51 and $22$ FC07/FC55 pairs (Table~\ref{tab:data_paired}). We use this dataset to train the domain adaptation algorithms on paired images. % 970 series. Details are provided in Tab.
-
-However, the \textit{Paired-public} dataset does not contain COVID-19 cases, since it was collected before the pandemic. The latter observation limits using this dataset to evaluate the consistency. Otherwise, we evaluate the quality of COVID-19 segmentation algorithms using images with no COVID-19 lesions, either evaluating the consistency of noisy or false positive predictions. For the same reason, one should also be careful using this data to enforce the consistency in the last network layers, e.g., in \textit{P-Consistency}. The data without COVID-19 lesions can force the network to output trivial predictions.
+However, the Paired-public dataset does not contain COVID-19 cases, since it was collected before the pandemic. The latter observation limits using this dataset to evaluate the consistency. Otherwise, we evaluate the quality of COVID-19 segmentation algorithms using images with no COVID-19 lesions, either evaluating the consistency of noisy or false positive predictions. For the same reason, one should also be careful using this data to enforce the consistency in the last network layers, e.g., in P-Consistency. The data without COVID-19 lesions can force the network to output trivial predictions.
 
 Therefore, we introduce a private dataset for the extended consistency evaluation.
 
 
-\subsubsection{Paired-private}
-
-From the private collection of the chest CT images, we filter out $181$ pairs to create the Paired-private dataset. These images were initially collected from Moscow outpatient clinics during the year 2020. Scanning was performed on the \textit{Toshiba} and \textit{GE medical systems} units using diverse settings. We select the four most frequent kernel pairs with a total of six unique reconstruction kernels: FC07, FC51, FC55, LUNG, SOFT, and STANDARD. We detail the distribution of kernel pairs in Table~\ref{tab:data_paired}.
+\textbf{Paired-private.} From the private collection of the chest CT images, we filter out $181$ pairs to create the Paired-private dataset. These images were initially collected from Moscow outpatient clinics during the year 2020. Scanning was performed on the Toshiba and GE medical systems units using diverse settings. We select the four most frequent kernel pairs with a total of six unique reconstruction kernels: FC07, FC51, FC55, LUNG, SOFT, and STANDARD. The distribution of these kernel pairs is given in Table~\ref{tab:data_paired}.
 
 These images contain COVID-19 lesions, therefore we use the Paired-private dataset both for training and evaluation. The wider variety of kernels also allows us to test the generalization of algorithms to unseen kernels. More specifically, we consider kernels LUNG, SOFT, and STANDARD in the Paired-private dataset to be unseen for the model trained on Paired-public data or only FC07, FC51, and FC55 kernels (excluding the rest).
 
@@ -182,45 +201,37 @@ These images contain COVID-19 lesions, therefore we use the Paired-private datas
 
 \subsection{Segmentation model}
 
-For all our experiments, we use a  slightly modified 2D U-Net \cite{ronneberger2015u}, introducing the standard architectural modifications, such as replacing every convolution layer with the Residual Block \cite{he2016deep}. We prefer the 2D model to 3D since in the Mosmed-1110 dataset images have an 8 mm inter-slice distance and the inter-slice distance of Covid-private images is in the range from 0.8 mm to 1.25 mm. Furthermore, the 2D model shows performance almost equal to the performance of the 3D model for COVID-19 segmentation \cite{goncharov2021ct}. We also note that all considered methods are independent of the architecture choice.
+For all our experiments, we use a  slightly modified 2D U-Net \cite{ronneberger2015u}, introducing the standard architectural modifications, such as replacing every convolution layer with the Residual Block \cite{he2016deep}. We prefer the 2D model to 3D since in the Mosmed-1110 dataset images have an 8 mm inter-slice distance and the inter-slice distance of Covid-private images is in the range from 0.8 mm to 1.25 mm. Furthermore, the 2D model shows performance almost equal to the performance of the 3D model for COVID-19 segmentation \cite{goncharov2021ct}.% We also note that all considered methods are independent of the architecture choice.
 
-\subsubsection{Preprocessing}
+\textbf{Preprocessing.} Before passing to the segmentation model, we apply the same preprocessing pipeline to all CT images. Preprocessing consists of four steps. (i) We rescale a CT image to have $1.75 \times 1.75$ mm axial resolution {using linear interpolation}. (ii) Then, the intensity values are clipped to the minimum of $-1000$ Hounsfield units (HU) and a maximum of $300$ HU. (iii) The resulting intensities are min-max-scaled to the $[0; 1]$ range. (iv) Finally, we crop the resulting image to the automatically generated lung mask.
 
-Before passing to the segmentation model, we apply the same preprocessing pipeline to all CT images. Preprocessing consists of four steps. (i) We rescale a CT image to have $1.75 \times 1.75$ mm axial resolution {using linear interpolation}. (ii) Then, the intensity values are clipped to the minimum of $-1000$ HU and a maximum of $300$ HU. (iii) The resulting intensities are min-max-scaled to the $[0; 1]$ range. (iv) Finally, we crop the resulting image to the automatically generated lung mask.
+We generate the lung mask by training a standalone CNN segmentation model. The training procedure and architecture are reproduced from \cite{goncharov2021ct}. The training of the lung segmentation model involves two external chest CT datasets: LIDC-IDRI~\cite{lidc} and NSCLC-Radiomics~\cite{nsclc1,nsclc2}. These datasets have no intersection with the other datasets used to train the COVID-19 segmentation models, so there is no possible data leak. The trained lung segmentation model achieves about $0.98$ Dice Score both on the cross-validation and on the Medseg-9 dataset (it contains annotated lung masks). The latter result indicates that the lung segmentation model is robust to different kinds of domain shift and, moreover to the appearance of novel lesions (COVID-19).
 
-We generate the lung mask by training a standalone CNN segmentation model. The training procedure and architecture are reproduced from \cite{goncharov2021ct}. The training of the lung segmentation model involves two external chest CT datasets: LIDC-IDRI \cite{lidc} and NSCLC-Radiomics \cite{nsclc1,nsclc2}. These datasets have no intersection with the other datasets used to train the COVID-19 segmentation models, so there is no possible data leak. The trained lung segmentation model achieves about $0.98$ Dice Score both on the cross-validation and on the Medseg-9 dataset (it contains annotated lung masks). The latter result indicates that the lung segmentation model is robust to different kinds of domain shift and, moreover to the appearance of novel lesions (COVID-19).
-
-\subsubsection{Training Details}
-
-We train all models for 25000 iterations using Adam \cite{kingma2014adam} optimizer with the default parameters and an initial learning rate of $10^{-4}$. Every 6000 iterations the learning rate is multiplied by $0.2$. Each iteration contains 32 randomly sampled 2D axial slices. Training of the plain segmentation model and similarly F-Consistency takes approximately 8 hours on Nvidia GTX 1080 (8 GB) (Santa Clara, CA, USA). Training of DANN and FBPAug takes 12 and 30 hours, respectively, in the same setting. The inference time is approximately 5 -- 10 seconds depending on the image size and it is the same for all methods. As a loss function, we use binary cross-entropy (BCE).
+\textbf{Training details.} We train all models for 25000 iterations using Adam~\cite{kingma2014adam} optimizer with the default parameters and an initial learning rate of $10^{-4}$. Every 6000 iterations the learning rate is multiplied by $0.2$. Each iteration contains 32 randomly sampled 2D axial slices. Training of the plain segmentation model and similarly F-Consistency takes approximately 8 hours on Nvidia GTX 1080 (8 GB) (Santa Clara, CA, USA). Training of DANN and FBPAug takes 12 and 30 hours, respectively, in the same setting. The inference time is approximately 5 -- 10 seconds depending on the image size and it is the same for all methods. As a loss function, we use binary cross-entropy (BCE).
 
 % With probability $0.5$ we rotate an image by multiply of $90$ degrees and flip an image horizontally or vertically.
 
 
 \subsection{FBPAug experiments and results}
 
+We compare the proposed method with three standard augmentations: gamma transformation (Gamma)~\cite{tureckova2020improving}, additive Gaussian noise (Noise), and random windowing (Windowing), the technique proposed in~\cite{kloenne2020domain}. As a baseline method, we train a network without any intensity augmentations (Baseline).
 
-\subsubsection{Experimental setup}
+\textbf{Gamma} augments images using the following intensity transformation:
 
-We compare the proposed method with three standard augmentations: gamma transformation (Gamma), additive Gaussian noise (Noise), and random windowing (Windowing), the technique proposed by \cite{kloenne2020domain}. As a baseline method, we train a network without any intensity augmentations (Baseline).
-
-\paragraph{Gamma} \cite{tureckova2020improving}, augments images using gamma transformation:
-
-\begin{equation}
+\[
 	\hat{I}(x, y) = \left(\frac{I(x, y) - m}{M - m}\right)^\gamma \cdot(M - m) + m,
-\end{equation}
+\]
+
+\noindent
 where $M = \max(I(x, y))$, $m=\min(I(x, y))$ with a parameter $\gamma$, such that we randomly sample the logarithm of $\gamma$ from $\mathcal{N}(0, 0.2)$. 
 
-\paragraph{Noise} is the additive gaussian noise drown from $\mathcal{N}(0, 0.1)$. 
+\textbf{Noise} is the additive gaussian noise drown from $\mathcal{N}(0, 0.1)$. 
 
-\paragraph{Windowing} \cite{kloenne2020domain} make use of the fact that different tissue has diferent attenuation coefficient. We uniformly sample the center of the window $c$ from $[-700, -500]$ Hounsfield units (HU)  and the width of the window $w$ from $[1300, 1700]$ HU. Then we clip the image to the $[c - w/2, c + w/2]$ range.
+\textbf{Windowing}  makes use of the fact that different tissue has diferent attenuation coefficient. We uniformly sample the center of the window $c$ from $[-700, -500]$ HU  and the width of the window $w$ from $[1300, 1700]$ HU. Then we clip the image to the $[c - w/2, c + w/2]$ HU range.
 
-\paragraph{FBPAug} parameters were sampled as follows. We uniformly sample $a$ from $[10.0, 40.0]$ and  $b$ from $[1.0, 4.0]$ in sharpening case and $a$ from $[-1.0, 0]$, $b$ from $[0.1, 1.0]$ in smoothing case. 
+\textbf{FBPAug} parameters were sampled as follows. We uniformly sample $a$ from $[10.0, 40.0]$ and  $b$ from $[1.0, 4.0]$ in sharpening case and $a$ from $[-1.0, 0]$, $b$ from $[0.1, 1.0]$ in smoothing case.
 
-
-\subsubsection{Results}
-
-Table~\ref{tab:fbpaug_res} summarizes our FBPAug results. First, experiments on \textit{COVID-test} show that segmentation quality almost does not differ for compared methods. The three best augmentation approaches are not significantly different (Wilcoxon test P-values are 0.71 for FBPAug vs. Gamma and 0.17 for FBPAug vs. Windowing). Thus, our method at least does not harm segmentation performance and furthermore performs are on-par with best reported for this dataset \cite{goncharov2021ct}.
+Table~\ref{tab:fbpaug_res} summarizes our FBPAug results. First, experiments on COVID-test show that segmentation quality almost does not differ for compared methods. The three best augmentation approaches are not significantly different (Wilcoxon test P-values are 0.71 for FBPAug vs. Gamma and 0.17 for FBPAug vs. Windowing). Thus, our method at least does not harm segmentation performance and performs on-par with the best reported method for this dataset~\cite{goncharov2021ct}.
 
 \input{Dissertation/Tables/3_3_fbpaug_res}
 
@@ -229,57 +240,57 @@ Next, we observe a significant disagreement in predictions on paired (\textit{sm
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{Dissertation/Figures/3_ct/bland-altman.png}
-	\caption{Bland-Altman plot showing prediction agreement using FBPAug (proposed augmentation, red) and next best competitor (Gaussian noise, blue). Agreement is measured between predictions on paired images reconstructed with soft and hard convolution kernels from \textit{Covid-private} dataset. Difference in image pairs were always computed as $\text{Volume}_{\text{soft}} - \text{Volume}_{\text{sharp}}$.}
+	\caption{Bland-Altman plot showing prediction agreement using FBPAug (proposed augmentation, red) and next best competitor (Gaussian noise, blue).}
 	\label{fig:bland-altman}
 \end{figure}
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{Dissertation/Figures/3_ct/contours_new.png}
-	\caption{Example FBPAug predictions. Left -- image reconstructed with a \textit{smooth} kernel. Right -- image reconstructed with a \textit{sharp} kernel from the same sinogram. Red dashed contour -- baseline model (predictions agreement is $0.66$), blue contour -- FBPAug (predictions agreement is $0.93$).}
+	\caption{Example FBPAug predictions. Left -- image reconstructed with a \textit{smooth} kernel. Right -- image reconstructed with a \textit{sharp} kernel from the same sinogram.}
 	\label{fig:fbpaug_pred}
 \end{figure}
 
 
 \subsection{F-consistency experiments and results}
 
-We compare some of the key results statistically using a one-sided Wilcoxon signed-rank test. We report p-values in two testing setups: $p_1$, comparing five mean values after cross-validation, and $p_2$, comparing Dice Score on every image as an independent sample.
+We compare some of the key results statistically using a one-sided Wilcoxon signed-rank test. We report p-values in two testing setups: $p_1$ -- comparing five mean values after cross-validation, and $p_2$ -- comparing Dice Score on every image as an independent sample.
 
 
-\subsubsection{Methods comparison}
-
-To begin with, we show the existence of the domain shift problem within the COVID-19 segmentation task. The Dice Score of the baseline model on the COVID-test dataset is lower than the cross-validation score on the COVID-train dataset, $0.56$ against $0.60$. Also, this score is significantly lower than $0.64$ achieved by our adaptation method $\left(p_1 < 0.05,\: p_2 < 10^{-4} \right)$. Results could be found in Table~\ref{tab:res_final} comparing row Baseline to the others. For all adaptation methods, we observe an increase in the consistency score and segmentation quality on the target domain. Moreover, all methods maintain their quality on the source domain compared to Baseline.
+\textbf{Methods comparison.} To begin with, we show the existence of the domain shift problem within the COVID-19 segmentation task. The Dice Score of the baseline model on the COVID-test dataset is lower than the cross-validation score on the COVID-train dataset, $0.56$ against $0.60$. Also, this score is significantly lower than $0.64$ achieved by our adaptation method $\left(p_1 < 0.05,\: p_2 < 10^{-4} \right)$. Results could be found in Table~\ref{tab:res_final} comparing row Baseline to the others. For all adaptation methods, we observe an increase in the consistency score and segmentation quality on the target domain. Moreover, all methods maintain their quality on the source domain compared to Baseline.
 
 \input{Dissertation/Tables/3_4_res_final}
 
-Further, we compare FBPAug to the best adaptation methods since it is a straightforward solution to the domain shift problem caused by the difference in the reconstruction kernels. Although FBPAug achieves comparable results on the target domain, F-Consistency outperforms it in terms of the average consistency score, $0.80$ Dice Score against $0.76$ $\left(p_1 < 0.05,\: p_2 < 10^{-5}\right)$. The results are also in Table~\ref{tab:res_final}, row FBPAug.
+% Further, we compare FBPAug to the best adaptation methods since it is a straightforward solution to the domain shift problem caused by the difference in the reconstruction kernels. Although FBPAug achieves comparable results on the target domain, F-Consistency outperforms it in terms of the average consistency score, $0.80$ Dice Score against $0.76$ $\left(p_1 < 0.05,\: p_2 < 10^{-5}\right)$. The results are also in Table~\ref{tab:res_final}, row FBPAug.
 
-Then, we compare P-Consistency (which operates with the last layer of decoder) with F-Consistency and show it resulting in the significantly lower consistency score, $0.63$ against $0.80$ $\left(p_1 < 0.05,\: p_2 < 10^{-10}\right)$. Thus, our findings align with the message \cite{zakazov2021anatomy} that the encoder layers contain more domain-specific information than the decoder ones.
+We compare P-Consistency (which operates with the last layer of decoder) with F-Consistency and show it resulting in the significantly lower consistency score, $0.63$ against $0.80$ $\left(p_1 < 0.05,\: p_2 < 10^{-10}\right)$. Thus, our findings align with the message of~\cite{zakazov2021anatomy} that the encoder layers contain more domain-specific information than the decoder ones.
 
 F-consistency outperforms DANN. Although both methods score similar in target Dice Score, F-Consistency has an advantage over DANN in the consistency score: $0.80$ against $0.78$ $\left(p_1 < 0.05,\: p_2 < 10^{-2}\right)$. Our intuition here is F-Consistency explicitly enforces features alignment, while DANN enforces features to be indistinguishable for the discriminator. The latter differently impact the consistency score, and F-Consistency performs better.
 
-We conclude the comparison of the methods with the qualitative analysis. In Figure~\ref{fig:test_preds}, one could find examples of the Baseline, FBPAug, DANN, and F-Consistency predictions on the COVID-test dataset and compare them with the ground truth. Although all adaptation methods perform similar to the ground truth with minor inaccuracies, Baseline outputs the massive false positive predictions on the unseen domain. Additionally to the quantitative analysis above, the latter observation highlights the relevance of the domain adaptation problem in the COVID-19 segmentation task.
+We conclude comparison of the methods with the qualitative analysis. In Figure~\ref{fig:test_preds}, one could find examples of the Baseline, FBPAug, DANN, and F-Consistency predictions on the COVID-test dataset and compare them with the ground truth. All adaptation methods perform similar to the ground truth with minor inaccuracies, while Baseline gives massive false positive predictions on the unseen domain.%With the quantitative analysis above, these observations highlight the relevance of the domain adaptation problem in the COVID-19 segmentation task.
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{Dissertation/Figures/3_ct/test_preds.png}
-	\caption{Examples of axial CT slices from the COVID-test dataset with the corresponding predictions and ground truth annotations. Three columns, denoted \textbf{A}, \textbf{B}, and \textbf{C}, contains three unique slices. The top row contains the contours of the ground truth and baseline prediction. The bottom row contains the contours of the adaptation methods' predictions. DANN and F-Consistency correspond to DANN and F-Cons from Table~\ref{tab:res_final}, respectively.\label{fig:test_preds}}
+	\caption{Examples of three axial CT slices (columns A, B, and C) from the COVID-test dataset with the corresponding predictions and ground truth annotations.}% Three columns, denoted \textbf{A}, \textbf{B}, and \textbf{C}, contains three unique slices.}% The top row contains the contours of the ground truth and baseline prediction. The bottom row contains the contours of the adaptation methods' predictions. DANN and F-Consistency correspond to DANN and F-Cons from Table~\ref{tab:res_final}, respectively.}
+	\label{fig:test_preds}
 \end{figure}
 
-In Figure~\ref{fig:consistency_preds}, we visualize predictions of the same four methods on the paired images from the Paired-private dataset. For the Baseline, we observe an extreme inconsistency (Figure~\ref{fig:consistency_preds}A) and massive false positive predictions in healthy lung tissues (Figure~\ref{fig:consistency_preds}D) and even outside lungs (Figure~\ref{fig:consistency_preds}B). For the adaptation methods, their predictions are visually more consistent inside every pair, which aligns with the consistency scores in Table~\ref{tab:res_final}.  Despite the high consistency scores, FBPAug and DANN output more aggressive predictions. FBPAug predicts motion artifacts near the body regions (Figure~\ref{fig:consistency_preds}A) and triggers similarly to the baseline on, most likely, healthy lung tissues (Figure~\ref{fig:consistency_preds}B). DANN is more conservative but triggers on the consolidation-like tissues (Figure~\ref{fig:consistency_preds}C,D). However, without the ground truth annotations on the paired data, we refer to this analysis as a discussion.
+In Figure~\ref{fig:consistency_preds}, we visualize predictions of the same four methods on the paired images from the Paired-private dataset. For the Baseline, we observe an extreme inconsistency (Figure~\ref{fig:consistency_preds}~A) and massive false positive predictions in healthy lung tissues (Figure~\ref{fig:consistency_preds}~D) and even outside lungs (Figure~\ref{fig:consistency_preds}~B). For the adaptation methods, their predictions are visually more consistent inside every pair. Despite the high consistency scores, FBPAug and DANN output more aggressive predictions. FBPAug predicts motion artifacts near the body regions (Figure~\ref{fig:consistency_preds}~A) and triggers similarly to the Baseline on healthy lung tissues (Figure~\ref{fig:consistency_preds}~B). DANN is more conservative but triggers on the consolidation-like tissues (Figure~\ref{fig:consistency_preds}~C,~D). However, without the ground truth annotations on the paired data, we refer to this analysis as a discussion.
 
-\begin{figure}[h]
+\begin{landscape}
+\begin{figure}[p]
 	% \centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/3_ct/consistency_preds.png}
-	\caption{Examples of CT slices from the Private-paired dataset with the corresponding predictions on the paired images. Four doublets, denoted \textbf{A}, \textbf{B}, \textbf{C}, and \textbf{D}, contain corresponding slices from the smooth and sharp images. The doublets B and D are coronal and sagittal slices, respectively. Every slice contains predictions of four methods named in the legend.\label{fig:consistency_preds}}
+	\includegraphics[width=\linewidth]{Dissertation/Figures/3_ct/consistency_preds.png}
+	\caption{Examples of CT slices from the Private-paired dataset with the corresponding predictions on the paired images. Four doublets, denoted \textbf{A}, \textbf{B}, \textbf{C}, and \textbf{D}, contain corresponding slices from the smooth and sharp images. The doublets B and D are coronal and sagittal slices, respectively.}
+	\label{fig:consistency_preds}
 \end{figure}
+\end{landscape}
 
-Below, we investigate the generalization of the models trained with fewer data and the trade-off between consistency and segmentation quality.
+%Below, we investigate the generalization of the models trained with fewer data and the trade-off between consistency and segmentation quality.
 
 
-\subsubsection{Generalization with the less paired data}
-
-Further, we evaluate the models regularized using paired images from the Paired-public dataset. The dataset contains only FC07/FC51 and FC07/FC55 kernel pairs. Besides the previous setup, this data does not contain COVID-19 lesions. Thus, we demonstrate that some methods depend on the semantic content and poorly generalize to kernel styles. The results are shown in Table~\ref{tab:res_public}.
+\textbf{Generalization with the less paired data.} We evaluate the models regularized using paired images from the Paired-public dataset. The dataset contains only FC07/FC51 and FC07/FC55 kernel pairs. Besides the previous setup, this data does not contain COVID-19 lesions. Thus, we show that some methods depend on the semantic content and poorly generalize to kernel styles. The results are shown in Table~\ref{tab:res_public}.
 
 \input{Dissertation/Tables/3_5_res_public}
 
@@ -290,8 +301,8 @@ Finally, we observe our method, F-Consistency, to outperform the other adaptatio
 
 \section{Summary}
 
-We have proposed a new knowledge-driven augmentation method, FBPAug, to eliminate CT domain shifts related to the usage of different reconstruction kernels. It outperforms existing augmentation approaches in our experiments. We also release the code, so our plug-and-play approach can be easily incorporated into any existing deep learning pipeline to ensure zero-shot domain adaptation in CT images.
+We have proposed a new knowledge-driven augmentation method, FBPAug, to eliminate CT domain shifts related to the usage of different reconstruction kernels. It outperforms existing augmentation approaches and, in a zero-shot regime, other adaptation approaches. We also release the code, so FBPAug can be easily incorporated into any existing deep learning pipeline to ensure zero-shot domain adaptation in CT images.
 
-Secondly, we have proposed an unsupervised domain adaptation method, F-Consistency, to address the same domain shift in CT reconstruction kernels. Our method uses a set of unlabeled CT image pairs and enforces the similarity between feature maps of paired images. We have shown that F-Consistency outperformed the other adaptation methods and FBPAug in the COVID-19 segmentation task \textit{when provided with enough unlabeled data}. Finally, through extensive evaluation, we have shown our method to generalize the unseen reconstruction kernels better and without the specific semantic content.
+Secondly, we have proposed an unsupervised domain adaptation method, F-Consistency, to address the same domain shift in CT reconstruction kernels. Our method uses a set of unlabeled CT image pairs and enforces the similarity between feature maps of paired images. We have shown that F-Consistency outperformed the other adaptation methods and FBPAug in the COVID-19 segmentation task \textit{when provided with enough unlabeled data}. Finally, through extensive evaluation, we have shown our method to generalize to the unseen reconstruction kernels better and without the specific semantic content.
 
 

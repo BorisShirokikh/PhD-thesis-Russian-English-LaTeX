@@ -1,79 +1,90 @@
-\chapter{M3DA datasets description}
-\label{app:m3da_datasets}
+%\chapter{M3DA datasets description}
+%\label{app:m3da_datasets}
+%
+%
+%Below we provide an extended description of datasets used in M3DA benchmark, download and usage examples are available in the published repository\footnote{\href{https://github.com/BorisShirokikh/M3DA}{https://github.com/BorisShirokikh/M3DA}}. Example 2D slices from every dataset for visual comparison between domains are given in Figure~\ref{fig:contours}. Summary of licenses and data access is given in Table~\ref{tab:supp_datasets}.
+%
+%\input{Dissertation/Tables/app1_1_supp_datasets}
+%
+%
+%\section{AMOS}
+%
+%The AMOS dataset \cite{amos} contains 500 CT and 100 MRI abdominal scans with the multi-organ segmentation task: liver, stomach, spleen, left and right kidneys, bladder, aorta, pancreas, inferior vena cava, duodenum, prostate/uterus, gallbladder, esophagus, left and right adrenals. As a largest available dataset for inter-modality segmentation, we employed it in MR$\ra$CT and CT$\ra$MR domain shift setups. 
+%
+%We used all 60 labeled MRIs as the \textit{source} set in MR$\ra$CT setup and the \textit{target test} set in CT$\ra$MR. Then, 200 unlabeled CTs and 40 unlabeled MRIs were used as the \textit{target train} sets for adaptation purposes in the MR$\ra$CT and CT$\ra$MR setups, respectively. The remaining 300 labeled CTs were evenly split in two groups: the first is a source set in CT$\ra$MR, and the second is a target test set in MR$\ra$CT.
+%
+%Furthermore, we used AMOS CT images to create one of the most clinically relevant domain shift setups -- difference in the radiation dose during scanning. 
+%% In CT$\ra$LDCT, we employed the first group of 150 labeled CTs as a source set, 200 unlabeled CTs as a target train set, and the second group of 150 labeled CTs as a target test set. 
+%For the LDCT domain, we simulated low radiation dose using the algorithm provided in \cite{ldct}, simulated data are available at \href{https://zenodo.org/records/13373720}{https://zenodo.org/records/13373720}.
+%
+%
+%\section{BraTS}
+%
+%BraTS \cite{brats} is comprised of 2000 brain MRI cases, each consisting of four sequences: T1, T1c, T2, FLAIR, with a glioblastoma segmentation classes (3 foreground classes and background).  We only used 1251 cases with publicly available annotations and T1, T1c MRI sequences for T1 CE$\ra$T1 shift. Since sequences of the same case provide information about the same subject, we ensured source-target splits so that every case falls into exactly one fold and split cases with 50:25:25 ratio into source, target train, and target test folds.
+%
+%
+%\section{CC359}
+%
+%The CC359 dataset \cite{cc359} contains 359 brain MR T1 images from three scanners, namely, GE, Philips (PH), and Siemens (SM), obtained using two magnetic field strength values, $1.5$ and $3.0$T. The dataset can be split into six domains defined by two different field strengths $\times$ three vendors, each with approximately 60 images, so it yields 30 possible domain adaptation pairs. 
+%
+%CC359 also offers three tasks: brain, hippocampus, and white matter, gray matter, and cerebrospinal fluid (WMGMCSF) segmentation. We ommited hippocampus segmentation task from the benchmark, because our preliminary experiments showed it is not significantly affected by domain shifts, the relative performance drop is less than $2\%$ in every domain pair; see Table~\ref{tab:hippo}. We also omitted the brain segmentation task for the same reason, see results in \cite{shirokikh2020first}.
+%
+%\input{Dissertation/Tables/app1_2_cc359}
+%
+%Therefore, we focus only on the WMGMCSF segmentation task in CC359: white matter, gray matter and cerebral spinal fluid segmentation classes and background. From 30 possible domain pairs, we selected three with the maximum performance drop, highlighted in \textbf{bold},  Table~\ref{tab:wmgmcsf}): changing field strength with a fixed scanner PH 1.5T $\ra$ PH 3.0T (drop from 95.4 to 74.1 Dice score), changing scanner with the fixed field strength PH 3.0T $\ra$ SM 3.0T (drop from 95.7 to 76.6), and changing both parameters SM 3.0T $\ra$ GE 1.5T (drop from 95.8 to 56.0). We denote them as T1 F, T1 Sc, and T1 Mix, respectively.
+%
+%
+%\section{LIDC}
+%
+%LIDC \cite{lidc} is a multi-center collection of diagnostic and lung cancer screening thoracic CT scans with annotated lesions. It includes 1308 studies (of which 1018 include CT studies) from 1010 patients. Lung's nodules is one of the few clinical applications where both CE CT and CT are used, first for the initial scan, and second for the follow-ups \cite{purysko2016does}. We used LIDC for CE CT $\ra$ CT domain shift, we split data into three roughly equal groups, ommiting scans with empty masks: contrast enhanced CT (source domain) $X^s$, CT without contrast enhancement $X^t_{tr}$ (training part, target domain), and CT without contrast enhancement  $X^t_{ts}$ (test part, target domain). $X^t_{tr}$ and $X^t_{ts}$ were stratified by the number of lesions.
+%
+%
+%\chapter{M3DA methods description}
+%\label{app:m3da_methods}
+%
+%As mentioned above, we used an nnU-Net \cite{nnunet} backbone as segmentation network architecture in all methods. We preserved most of the nnU-Net training pipeline except for several methodological changes, which allow us to evaluate DA methods, such as AdaBN and InstanceNorm, separately and run the ablation studies. These changes along with the other training hyper-parameters are summarized in Table~\ref{tab:hyper}.
+%
+%Firstly, we replaced the default InstanceNorm with BatchNorm layers and removed test-time augmentation, so we can compare different normalizations and adaptive normalizations (AdaBN) and assess the unhindered impact of DA methods. Secondly, we reduced the patch size and number of the network features, so all experiments fit in a single 16 GB NVIDIA Tesla V100 and our benchmark remains economical. We set the number of epochs to 600 in all experiments, so that any method could complete its training in three days. All experiments were conducted on the Zhores supercomputer~\cite{zacharov2019zhores}.
+%
+%\input{Dissertation/Tables/app2_1_hparams}
+%
+%Below, we provide DA methods implementation details:
+%
+%\paragraph{Histogram matching} uses the baseline training pipeline, except all image intensity histograms are equalized to an average histogram computed over the train set. 
+%
+%\paragraph{Gamma augmentation} also uses the baseline training pipeline, and we perform gamma correction with randomly selected $\gamma \sim U[0.5, 2]$ on every input image.
+%
+%\paragraph{nnAugm} similarly supplements the same baseline training with the original set of nnUNet \cite{nnunet} augmentations.
+%
+%\paragraph{InstanceNorm} substitutes BN layers, while the training pipeline remains the same as in baseline.
+%
+%\paragraph{Adaptive BN} performs additional 1000 inference steps with batch size 4 over the baseline, updating the running statistics of BN layers on target training data.
+%
+%\paragraph{Self-ensembling} design and all parameters are reproduced from \cite{se_medim} with our architecture.
+%
+%\paragraph{MinEnt} adds a predictions entropy minimization criterion on target images. So we extended our training pipeline with the second step using target train images, and added entropy loss with the recommended in \cite{entropy} weight $\lambda = 0.001$.
+%
+%\paragraph{DANN} introduces an auxiliary network called discriminator. Similar to recent studies \cite{entropy}, we used DCGAN~\cite{dcgan} discriminator architecture, replacing 2D convolutions with 3D ones. The losses weighting parameter is taken from \cite{dann_medim}, e.g., $\alpha = 0.01$.
+%
+%\paragraph{CycleGAN 2D} is fully reused from the original study \cite{cyclegan}. We trained a standalone CycleGAN 2D to map between source and target train images, where we sample axial slices from our volumetric images and rescale them into 256 $\times$ 256 gray scale images. Before predicting with the baseline segmentation model, we applied one of the generators to target test images (slice-by-slice) to transform them into fake source ones.
+%
+%\paragraph{CycleGAN 3D} is fully reused from the original study \cite{cyclegan3d}. We trained a standalone CycleGAN 3D to map between source and target train images, where we sample patches of size (128, 128, 96) from our volumetric images. Before predicting with the baseline segmentation model, we applied one of the generators to target test images (via overlapping grid) to transform them into fake source ones.
+%
+%\paragraph{GIN} is fully reused from \cite{gin} with the implementation based on the nnU-Net framework.
+%
+%\paragraph{MIND} is fully reused from \cite{dg_tta} with the implementation based on the nnUNet framework.\\
+%
+%
+%All experiments are available at \href{https://github.com/BorisShirokikh/M3DA-exp}{github.com/BorisShirokikh/M3DA-exp}.
 
 
-Below we provide an extended description of datasets used in M3DA benchmark, download and usage examples are available in the published repository\footnote{\href{https://github.com/BorisShirokikh/M3DA}{https://github.com/BorisShirokikh/M3DA}}. Example 2D slices from every dataset for visual comparison between domains are given in Figure~\ref{fig:contours}. Summary of licenses and data access is given in Table~\ref{tab:supp_datasets}.
+%\chapter{Evidence of Industrial Application}
+%\label{app:m3da_datasets}
+\chapter{Certificate of Registration}
+\label{app:reg}
 
-\input{Dissertation/Tables/app1_1_supp_datasets}
-
-
-\section{AMOS}
-
-The AMOS dataset \cite{amos} contains 500 CT and 100 MRI abdominal scans with the multi-organ segmentation task: liver, stomach, spleen, left and right kidneys, bladder, aorta, pancreas, inferior vena cava, duodenum, prostate/uterus, gallbladder, esophagus, left and right adrenals. As a largest available dataset for inter-modality segmentation, we employed it in MR$\ra$CT and CT$\ra$MR domain shift setups. 
-
-We used all 60 labeled MRIs as the \textit{source} set in MR$\ra$CT setup and the \textit{target test} set in CT$\ra$MR. Then, 200 unlabeled CTs and 40 unlabeled MRIs were used as the \textit{target train} sets for adaptation purposes in the MR$\ra$CT and CT$\ra$MR setups, respectively. The remaining 300 labeled CTs were evenly split in two groups: the first is a source set in CT$\ra$MR, and the second is a target test set in MR$\ra$CT.
-
-Furthermore, we used AMOS CT images to create one of the most clinically relevant domain shift setups -- difference in the radiation dose during scanning. 
-% In CT$\ra$LDCT, we employed the first group of 150 labeled CTs as a source set, 200 unlabeled CTs as a target train set, and the second group of 150 labeled CTs as a target test set. 
-For the LDCT domain, we simulated low radiation dose using the algorithm provided in \cite{ldct}, simulated data are available at \href{https://zenodo.org/records/13373720}{https://zenodo.org/records/13373720}.
-
-
-\section{BraTS}
-
-BraTS \cite{brats} is comprised of 2000 brain MRI cases, each consisting of four sequences: T1, T1c, T2, FLAIR, with a glioblastoma segmentation classes (3 foreground classes and background).  We only used 1251 cases with publicly available annotations and T1, T1c MRI sequences for T1 CE$\ra$T1 shift. Since sequences of the same case provide information about the same subject, we ensured source-target splits so that every case falls into exactly one fold and split cases with 50:25:25 ratio into source, target train, and target test folds.
-
-
-\section{CC359}
-
-The CC359 dataset \cite{cc359} contains 359 brain MR T1 images from three scanners, namely, GE, Philips (PH), and Siemens (SM), obtained using two magnetic field strength values, $1.5$ and $3.0$T. The dataset can be split into six domains defined by two different field strengths $\times$ three vendors, each with approximately 60 images, so it yields 30 possible domain adaptation pairs. 
-
-CC359 also offers three tasks: brain, hippocampus, and white matter, gray matter, and cerebrospinal fluid (WMGMCSF) segmentation. We ommited hippocampus segmentation task from the benchmark, because our preliminary experiments showed it is not significantly affected by domain shifts, the relative performance drop is less than $2\%$ in every domain pair; see Table~\ref{tab:hippo}. We also omitted the brain segmentation task for the same reason, see results in \cite{shirokikh2020first}.
-
-\input{Dissertation/Tables/app1_2_cc359}
-
-Therefore, we focus only on the WMGMCSF segmentation task in CC359: white matter, gray matter and cerebral spinal fluid segmentation classes and background. From 30 possible domain pairs, we selected three with the maximum performance drop, highlighted in \textbf{bold},  Table~\ref{tab:wmgmcsf}): changing field strength with a fixed scanner PH 1.5T $\ra$ PH 3.0T (drop from 95.4 to 74.1 Dice score), changing scanner with the fixed field strength PH 3.0T $\ra$ SM 3.0T (drop from 95.7 to 76.6), and changing both parameters SM 3.0T $\ra$ GE 1.5T (drop from 95.8 to 56.0). We denote them as T1 F, T1 Sc, and T1 Mix, respectively.
-
-
-\section{LIDC}
-
-LIDC \cite{lidc} is a multi-center collection of diagnostic and lung cancer screening thoracic CT scans with annotated lesions. It includes 1308 studies (of which 1018 include CT studies) from 1010 patients. Lung's nodules is one of the few clinical applications where both CE CT and CT are used, first for the initial scan, and second for the follow-ups \cite{purysko2016does}. We used LIDC for CE CT $\ra$ CT domain shift, we split data into three roughly equal groups, ommiting scans with empty masks: contrast enhanced CT (source domain) $X^s$, CT without contrast enhancement $X^t_{tr}$ (training part, target domain), and CT without contrast enhancement  $X^t_{ts}$ (test part, target domain). $X^t_{tr}$ and $X^t_{ts}$ were stratified by the number of lesions.
-
-
-\chapter{M3DA methods description}
-\label{app:m3da_methods}
-
-As mentioned above, we used an nnU-Net \cite{nnunet} backbone as segmentation network architecture in all methods. We preserved most of the nnU-Net training pipeline except for several methodological changes, which allow us to evaluate DA methods, such as AdaBN and InstanceNorm, separately and run the ablation studies. These changes along with the other training hyper-parameters are summarized in Table~\ref{tab:hyper}.
-
-Firstly, we replaced the default InstanceNorm with BatchNorm layers and removed test-time augmentation, so we can compare different normalizations and adaptive normalizations (AdaBN) and assess the unhindered impact of DA methods. Secondly, we reduced the patch size and number of the network features, so all experiments fit in a single 16 GB NVIDIA Tesla V100 and our benchmark remains economical. We set the number of epochs to 600 in all experiments, so that any method could complete its training in three days. All experiments were conducted on the Zhores supercomputer~\cite{zacharov2019zhores}.
-
-\input{Dissertation/Tables/app2_1_hparams}
-
-Below, we provide DA methods implementation details:
-
-\paragraph{Histogram matching} uses the baseline training pipeline, except all image intensity histograms are equalized to an average histogram computed over the train set. 
-
-\paragraph{Gamma augmentation} also uses the baseline training pipeline, and we perform gamma correction with randomly selected $\gamma \sim U[0.5, 2]$ on every input image.
-
-\paragraph{nnAugm} similarly supplements the same baseline training with the original set of nnUNet \cite{nnunet} augmentations.
-
-\paragraph{InstanceNorm} substitutes BN layers, while the training pipeline remains the same as in baseline.
-
-\paragraph{Adaptive BN} performs additional 1000 inference steps with batch size 4 over the baseline, updating the running statistics of BN layers on target training data.
-
-\paragraph{Self-ensembling} design and all parameters are reproduced from \cite{se_medim} with our architecture.
-
-\paragraph{MinEnt} adds a predictions entropy minimization criterion on target images. So we extended our training pipeline with the second step using target train images, and added entropy loss with the recommended in \cite{entropy} weight $\lambda = 0.001$.
-
-\paragraph{DANN} introduces an auxiliary network called discriminator. Similar to recent studies \cite{entropy}, we used DCGAN~\cite{dcgan} discriminator architecture, replacing 2D convolutions with 3D ones. The losses weighting parameter is taken from \cite{dann_medim}, e.g., $\alpha = 0.01$.
-
-\paragraph{CycleGAN 2D} is fully reused from the original study \cite{cyclegan}. We trained a standalone CycleGAN 2D to map between source and target train images, where we sample axial slices from our volumetric images and rescale them into 256 $\times$ 256 gray scale images. Before predicting with the baseline segmentation model, we applied one of the generators to target test images (slice-by-slice) to transform them into fake source ones.
-
-\paragraph{CycleGAN 3D} is fully reused from the original study \cite{cyclegan3d}. We trained a standalone CycleGAN 3D to map between source and target train images, where we sample patches of size (128, 128, 96) from our volumetric images. Before predicting with the baseline segmentation model, we applied one of the generators to target test images (via overlapping grid) to transform them into fake source ones.
-
-\paragraph{GIN} is fully reused from \cite{gin} with the implementation based on the nnU-Net framework.
-
-\paragraph{MIND} is fully reused from \cite{dg_tta} with the implementation based on the nnUNet framework.\\
-
-
-All experiments are available at \href{https://github.com/BorisShirokikh/M3DA-exp}{github.com/BorisShirokikh/M3DA-exp}.
+\begin{center}
+	%\includegraphics[width=\textwidth]{Dissertation/Figures/6_appendix/output.pdf}
+	\includegraphics[width=0.95\textwidth]{Dissertation/Figures/6_appendix/output_crop.pdf}
+\end{center}
 

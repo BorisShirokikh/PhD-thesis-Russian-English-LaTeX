@@ -22,12 +22,12 @@
 \begin{table}[h]
 	\centering
 	\caption{Summary of the datasets with paired images.\label{tab:data_paired}}
-	\resizebox{\textwidth}{!}{%
+	%\resizebox{\textwidth}{!}{%
 		\begin{tabular}{c c c c}
 			\toprule
 			Dataset & Kernel pair (\textit{smooth}/\textit{sharp}) & Training & Testing pairs \\
 			\midrule
-			\multirow{2}{*}{\makecell{Paired-public \\ \cite{morozov2021simplified}}} & FC07/FC55 & 22 & 0 \\
+			\multirow{2}{*}{Paired-public} & FC07/FC55 & 22 & 0 \\
 			& FC07/FC51 & 98 & 0 \\
 			\midrule
 			\multirow{4}{*}{Paired-private} & FC07/FC55 & 60 & 20 \\
@@ -35,5 +35,5 @@
 			& SOFT/LUNG & 30 & 10 \\
 			& STANDARD/LUNG & 30 & 10 \\
 			\bottomrule
-	\end{tabular}}
+	\end{tabular}%}
 \end{table}

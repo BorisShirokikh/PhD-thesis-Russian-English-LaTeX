@@ -23,17 +23,17 @@
 	\centering
 	\caption{Summary of the segmentation datasets.\label{tab:data_segm}}
 	
-	\resizebox{\textwidth}{!}{%
+	%\resizebox{\textwidth}{!}{%
 		\begin{tabular}{c c c c c c}
 			\toprule
-			Dataset & Source & \makecell{Effective \\ size} & Kernels & Annotations & Split \\
+			Dataset & Source & Size & Kernels & Annotations & Split \\
 			\midrule
-			\multirow{2}{*}[-1.5em]{\textit{COVID-train}} & \makecell{\textit{Mosmed-1110} \\ \cite{morozov2020mosmeddata}} & 50 & \makecell{unknown \\ \textit{smooth}} & COVID-19 mask & \multirow{2}{*}[-1.5em]{\makecell{5-fold \\ cross-val}} \\
+			\multirow{2}{*}[-1.0em]{\textit{COVID-train}} & Mosmed-1110 & 50 & \makecell{unknown \\ smooth} & COVID-19 & \multirow{2}{*}[-1.5em]{\makecell{5-fold \\ cross-val}} \\
 			\cmidrule(lr){2-5}
-			& \makecell{\textit{MIDRC} \\ \cite{tsai2021rsna}} & 112 & \makecell{B/L/BONE/ \\ STANDARD \\ (\textit{smooth})} & COVID-19 mask & \\
+			& MIDRC & 112 & \makecell{B/L/BONE/ \\ STANDARD \\ (smooth)} & COVID-19 & \\
 			\midrule
-			\textit{COVID-test} & \textit{Medseg-9} & 9 & \makecell{unknown \\ \textit{sharp}} & \makecell{COVID-19 mask, \\ lungs mask} & \makecell{hold-out \\ test} \\
+			\textit{COVID-test} & Medseg-9 & 9 & \makecell{unknown \\ sharp} & \makecell{COVID-19, \\ lungs} & \makecell{hold-out \\ test} \\
 			\bottomrule
 			
-	\end{tabular}}
+	\end{tabular}%}
 \end{table}

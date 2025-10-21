@@ -56,52 +56,31 @@
 
 \begin{table}[h]
 	\centering
-	\caption{Comparison of all adaptation methods from Table \ref{tab:res_final} except FBPAug trained on the Public-paired dataset. All results are Dice scores in the format \textit{mean} $\pm$ \textit{std} calculated from $5$-fold cross-validation. We highlight the consistency scores near or below Baseline level in \textit{italic}. The best consistency scores are highlighted in \textbf{bold}.}
+	\caption{Comparison of adaptation methods trained on the Public-paired dataset. All results are Dice scores in the format \textit{mean (std)} calculated from $5$-fold cross-validation.}
 	%\vspace{.2cm}
-	\resizebox{\textwidth}{!}{%
-		\begin{tabular}{lccccccc}
+	%\resizebox{\textwidth}{!}{%
+		\begin{tabular}{lcccccc}
 			\toprule
-			
-			& \multirow{2.5}{*}{\shortstack{\textbf{COVID-Train}}} & \multirow{2.5}{*}{\textbf{COVID-Test}}& \multicolumn{5}{c}{\textbf{Paired-Private} \textbf{Consistency}} \\
-			\cmidrule(lr){4-8}
-			&  & & \textbf{FC07/55} & \textbf{FC07/51} & \textbf{LUNG/SOFT }& \textbf{LUNG/STAND }  & \textbf{Mean}\\
-			
+			& \multirow{2.5}{*}{\shortstack{COVID-\\test}} & \multicolumn{5}{c}{Paired-private consistency} \\
+			\cmidrule(lr){3-7}
+			& & FC07/55 & FC07/51 & soft/lung & stnd/lung & mean \\
 			\midrule
-			Baseline & $\mathbf{0.60 \pm 0.04}$ & $0.56 \pm 0.03$ & $0.52 \pm 0.06$ & $0.39 \pm 0.07$ & $0.58 \pm 0.08$ & $0.28 \pm 0.05$ & $0.46 \pm 0.05$\\
 			
-			% \cmidrule{1-8}
+			Baseline & 0.56(0.03) & 0.52(0.06) & 0.39(0.07) & 0.58(0.08) & 0.28(0.05) & 0.46(0.05) \\
 			
-			% DANN (Dec) & $0.58 \pm 0.04$ & $0.63 \pm 0.04$ & $.62 \pm 0.03$ & $.49 \pm 0.07$ & $\mathit{.60 \pm 0.03}$ & $\mathit{.30 \pm 0.04}$ & $\mathit{.53 \pm 0.03}$ \\
+			\cmidrule{1-7}
 			
-			\cmidrule{1-8}
+			P-Cons & 0.58(0.03) & 0.54(0.05) & 0.44(0.03) & 0.57(0.04) & 0.28(0.06) & 0.47(0.03) \\
 			
-			% DANN & $.58 \pm 0.05$ & $.64 \pm 0.02$ & $.84 \pm 0.02$ & $.70 \pm 0.02$ & $.86 \pm 0.03$ & $.66 \pm 0.06$ & $.78 \pm 0.02$ \\
+			\cmidrule{1-7}
 			
-			% \cmidrule{1-8}
+			DANN & \textbf{0.64(0.02)} & 0.75(0.02) & \textbf{0.64(0.05)} & 0.67(0.03) & 0.50(0.05) & 0.66(0.02) \\
 			
-			DANN &  $\mathbf{0.60 \pm 0.03}$ &  $\mathbf{0.64 \pm 0.02}$ & $0.75 \pm 0.02$ & $\mathbf{0.64 \pm 0.05}$ & $0.67 \pm 0.03$ & $0.50 \pm 0.05$  & $0.66 \pm 0.02$ \\
+			\cmidrule{1-7}
 			
-			\cmidrule{1-8}
-			
-			% P-Cons & $0.59 \pm 0.04$ & $0.61 \pm 0.01$ & $0.65 \pm 0.05$ & $0.60 \pm 0.02$ & $0.77 \pm 0.01$ & $0.47 \pm 0.04$ & $0.63 \pm 0.03$\\
-			
-			% \cmidrule{1-8}
-			
-			P-Cons & $0.53 \pm 0.03$ & $0.58 \pm 0.03$ & $\mathit{0.54 \pm 0.05}$ & $\mathit{0.44 \pm 0.03}$ & $\mathit{0.57 \pm 0.04}$  & $\mathit{0.28 \pm 0.06}$ & $\mathit{0.47 \pm 0.03}$  \\
-			
-			\cmidrule{1-8}
-			
-			% F-Cons (Dec) & $0.60 \pm 0.03$ & $0.59 \pm 0.00$ & $\mathit{.54 \pm 0.05}$ & $\mathit{.47 \pm 0.05}$ & $\mathit{.64 \pm 0.05}$ & $\mathit{.31 \pm 0.06}$ &  $\mathit{.50 \pm 0.04}$ \\
-			
-			% \cmidrule{1-8}
-			
-			% F-Cons &  $0.57 \pm 0.03$ & $0.64 \pm 0.03$ & $0.88 \pm 0.01$ & $0.72 \pm 0.04$ & $0.83 \pm 0.02$ & $0.70 \pm 0.05$ & $0.80 \pm 0.01$ \\
-			
-			% \cmidrule{1-8}
-			
-			F-Cons & $0.59 \pm 0.04$ & $\mathbf{0.64 \pm 0.02}$ & $\mathbf{0.80 \pm 0.02}$ & $\mathbf{0.63 \pm 0.04}$ & $\mathbf{0.71 \pm 0.02}$ & $\mathbf{0.55 \pm 0.05}$ & $\mathbf{0.70 \pm 0.02}$  \\
+			F-Cons & \textbf{0.64(0.02)} & \textbf{0.80(0.02)} & 0.63(0.04) & \textbf{0.71(0.02)} & \textbf{0.55(0.05)} & \textbf{0.70(0.02)} \\
 			
 			\bottomrule
-		\end{tabular}}
+		\end{tabular}%}
 		\label{tab:res_public}
 \end{table}

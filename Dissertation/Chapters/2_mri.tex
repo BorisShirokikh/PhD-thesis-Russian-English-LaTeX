@@ -9,44 +9,48 @@
 This chapter addresses the challenge of supervised domain adaptation in medical image segmentation, with a specific focus on the variability in MRI scans across different clinical sites. Firstly, we investigate that fine-tuning the initial layers of a convolutional neural network (CNN), which are more sensitive to low-level image features such as intensity variations, can more effectively mitigate domain shifts and enhance segmentation accuracy, particularly under conditions where annotated data is scarce. Then, we introduce SpotTUnet, a novel CNN architecture designed to autonomously determine the optimal layers for fine-tuning based on the characteristics of the target domain. SpotTUnet not only achieves competitive segmentation accuracy but also provides insights into which layers are most susceptible to domain shifts. Collectively, these two studies are invaluable for understanding the underlying dynamics of domain adaptation in medical image segmentation and can guide future research and practical implementations.
 %improving the reliability of medical image segmentation across diverse clinical environments.
 
+The results presented in this chapter are based on the author’s publications~\cite{shirokikh2020first,zakazov2021anatomy}.
 
-\section{Introduction}
+
+\section{Background}
 
 Convolutional Neural Networks (CNNs) have emerged as the most accurate methods for segmentation in many medical image analysis tasks \cite{shen2017deep}. The key strength of deep CNNs is their remarkable flexibility, enabled by a vast number of trainable parameters. However, this flexibility can also lead to significant performance degradation when the test data differs in distribution from the training data, a frequent issue in medical imaging \cite{wang2018deep}. This challenge is particularly pronounced in Magnetic Resonance Imaging (MRI), where variations in scanning protocols can result in differences in slice orientation, thickness, and, most critically, overall image intensities \cite{kamnitsas2017unsupervised,glocker2019machine,orbes2019multi}. Such differences between training and testing domains, commonly referred to as \textit{domain shift}, necessitate the use of Domain Adaptation (DA) methods.
 
-Many existing DA approaches focus on fine-tuning the later layers of CNNs, operating under the assumption that low-level features are shared across domains and tasks, while high-level features are more susceptible to changes and thus require adaptation \cite{yosinski2014transferable}. However, we hypothesize that the variations in MRI intensities are mostly low-level, which are primarily captured by the early convolutional layers, and can be effectively addressed by fine-tuning these initial layers. Through a comparative analysis of several fine-tuning strategies---including fine-tuning the entire network, the initial layers, and the final layers---we demonstrate that fine-tuning the initial layers significantly outperforms fine-tuning the final layers. Furthermore, in scenarios with extremely limited annotated data, fine-tuning the initial layers appears to be more effective than fine-tuning the entire network.
-
-Nonetheless, the question of finding the optimal fine-tuning strategy remains, since we tested only a limited number of options. Here, we adopt SpotTune \cite{guo2019spottune}, a Transfer Learning (TL) approach, that offers an adaptive fine-tuning mechanism by learning a policy that determines which layers should be either fine-tuned or re-used. We extend the SpotTune approach to the DA problem in medical image segmentation, proposing a novel method called SpotTUnet. Moreover, we suggest an interpretation mechanism to indicate CNN layers that are most susceptible to domain shift, providing insights into the nature of MRI domain shifts. Thus, SpotTUnet not only improves the supervised DA results but also provides the interpretable visualization, \textit{domain shift anatomy}, which could be used to enhance the unsupervised DA methods.\\
-
-%\let\labelitemi\labelitemii
-%\noindent
-Our contribution in this chapter is threefold:
-\begin{enumerate}
-	\item \textbf{Predefined fine-tuning.} We show that fine-tuning the initial layers of a CNN significantly outperforms fine-tuning the final layers, and, under conditions of extremely limited data, it also outperforms fine-tuning the entire network.
-	\item \textbf{Adaptive fine-tuning.} We introduce SpotTUnet, the first adaptation of SpotTune \cite{guo2019spottune} for supervised DA in medical image segmentation. SpotTUnet performs on par with the best alternative fine-tuning methods across different data availability scenarios.
-	\item \textbf{Domain shift anatomy.} We provide a detailed analysis of optimal fine-tuning strategies across various data availability scenarios, offering insights into the underlying reasons for the observed performance differences.
-\end{enumerate}
-% , incorporating interpretable regularization
-
-
-\section{Related work}
-
-The most common approach in DA is to fine-tune the final layers of a network. This is a natural extension of transfer learning, where it is generally assumed that the generality of features decreases with depth \cite{yosinski2014transferable}. Several studies have shown promising results using this strategy for domain adaptation. For example, \cite{kushibar2019supervised} found that fine-tuning only the last CNN layer improved performance over simple transfer without adaptation, although no comparisons were made with other strategies. Similarly, \cite{valindria2018domain} fine-tuned the last CNN layer, though their work concentrated more on training case selection rather than the fine-tuning method itself. Comparisons of fine-tuning strategies have also been explored in works such as \cite{valverde2019one,ghafoorian2017transfer}, showing that the later layers are more beneficial to fine-tune.
+Many existing DA approaches focus on fine-tuning the later layers of CNNs, operating under the assumption that low-level features are shared across domains and tasks, while high-level features are more susceptible to changes and thus require adaptation \cite{yosinski2014transferable}. For example, \cite{kushibar2019supervised} found that fine-tuning only the last CNN layer improved performance over simple transfer without adaptation, although no comparisons were made with other strategies. Similarly, \cite{valindria2018domain} fine-tuned the last CNN layer, though their work concentrated more on training case selection rather than the fine-tuning method itself. Comparisons of fine-tuning strategies have also been explored in works such as \cite{valverde2019one,ghafoorian2017transfer}, showing that the later layers are more beneficial to fine-tune.
 
 Similarly, adversarial-based algorithms often focus on minimizing domain shift by analyzing high-level features generated in the final layers \cite{ganin2015unsupervised}. Thus, in the unsupervised DA setup on MR images, \cite{kamnitsas2017unsupervised} achieves better results adapting features from all the layers except for the first block, but the layers choice strategy remains unlearnable. Studies in out-of-distribution (OOD) detection, such as \cite{lee2018simple,erdil2020unsupervised}, have shown that the best performance is often achieved using confidence scores from intermediate or final layers. However, these studies typically involve datasets that are vastly different in nature (e.g., CIFAR-10 and SVHN), whereas in our case, an ``OOD sample'' refers to a scan from a new domain within the same imaging modality.
 
 In contrast, research on non-medical images has suggested that domain shift effects may be most pronounced in the earliest layers of a CNN. For instance, \cite{aljundi2016lightweight} demonstrated that domain-specific variations in filter map distributions appear in the first layer, leading to the development of an unsupervised DA method targeting this layer. Their finding suggests that early layers may be more susceptible to domain shift than previously assumed. A related concept is explored in \cite{karani2021test}, which proposes a test-time domain adaptation strategy involving the fine-tuning of a shallow image-to-normalized-image CNN module. This approach can be thought of as fine-tuning the first layers of a network, integrating preprocessing with the main task network.
 
 Further supporting the importance of early layers, \cite{dou2018unsupervised} hypothesized that cross-modality domain shifts (e.g., between MRI and CT) primarily affect the first layers. Although this hypothesis was not directly validated in their study, it points to a potential area of exploration. Similar motivations underlie the development of the unsupervised DA method in \cite{zhao2021robust}, where the earlier layers were selected for feature adaptation.
+
+We hypothesize that the variations in MRI intensities are mostly low-level, which are primarily captured by the early convolutional layers, and can be effectively addressed by fine-tuning these initial layers. Through a comparative analysis of several fine-tuning strategies---including fine-tuning the entire network, the initial layers, and the final layers---we demonstrate that fine-tuning the initial layers significantly outperforms fine-tuning the final layers. Furthermore, in scenarios with extremely limited annotated data, fine-tuning the initial layers appears to be more effective than fine-tuning the entire network.
+
+Nonetheless, the question of finding the optimal fine-tuning strategy remains, since we tested only a limited number of options. So we adopt SpotTune \cite{guo2019spottune}, a Transfer Learning (TL) approach, that offers an adaptive fine-tuning mechanism by learning a policy that determines which layers should be either fine-tuned or re-used. We extend the SpotTune approach to the DA problem in medical image segmentation, proposing a novel method called SpotTUnet. Moreover, we suggest an interpretation mechanism to indicate CNN layers that are most susceptible to domain shift, providing insights into the nature of MRI domain shifts. Thus, SpotTUnet not only improves the supervised DA results but also provides the interpretable visualization, \textit{domain shift anatomy}, which could be used to enhance the unsupervised DA methods.
+
+
+
+%\let\labelitemi\labelitemii
+%\noindent
+%Our contribution in this chapter is threefold:
+%\begin{enumerate}
+%	\item \textbf{Predefined fine-tuning.} We show that fine-tuning the initial layers of a CNN significantly outperforms fine-tuning the final layers, and, under conditions of extremely limited data, it also outperforms fine-tuning the entire network.
+%	\item \textbf{Adaptive fine-tuning.} We introduce SpotTUnet, the first adaptation of SpotTune \cite{guo2019spottune} for supervised DA in medical image segmentation. SpotTUnet performs on par with the best alternative fine-tuning methods across different data availability scenarios.
+%	\item \textbf{Domain shift anatomy.} We provide a detailed analysis of optimal fine-tuning strategies across various data availability scenarios, offering insights into the underlying reasons for the observed performance differences.
+%\end{enumerate}
+
+
+%\section{Related work}
+
+%The most common approach in DA is to fine-tune the final layers of a network. This is a natural extension of transfer learning, where it is generally assumed that the generality of features decreases with depth \cite{yosinski2014transferable}. Several studies have shown promising results using this strategy for domain adaptation. 
+
 %In \cite{shirokikh2020first} fine-tuning of the first layers is compared to fine-tuning of the last layers and of the whole network. The conclusion is that fine-tuning of the first layers is superior to fine-tuning of the last ones and is even preferable to fine-tuning of the whole network in the case of annotated Target data scarcity.
 
-In this paper, we explicitly test the selection of layers to fine-tune on MRI data, concluding that the initial layers is a better choice. Then, we move further and design a strategy for automatic and explainable layers selection in the supervised DA setup. Our approach is motivated by SpotTune \cite{guo2019spottune}, which learns a policy to choose between fine-tuning and re-using pretrained network layers and at the same time fine-tunes chosen layers on the target data. So our work builds on and refines previously described approaches in both supervised and unsupervised medical image DA.
+% In this chapter, we explicitly test the selection of layers to fine-tune on MRI data, concluding that the initial layers is a better choice. Then, we move further and design a strategy for automatic and explainable layers selection in the supervised DA setup. Our approach is motivated by SpotTune \cite{guo2019spottune}, which learns a policy to choose between fine-tuning and re-using pretrained network layers and at the same time fine-tunes chosen layers on the target data. So our work builds on and refines previously described approaches in both supervised and unsupervised medical image DA.
 
-To this end, we compare our proposed SpotTUnet with the best existing unlearnable layer selection strategies within a supervised DA setup, demonstrating its effectiveness as an adaptation method and a tool for analyzing domain shift. Although many recent approaches have focused on achieving the best possible score on the target domain, our focus remains on understanding the domain shift and its impact on fine-tuning strategies.
+% To this end, we compare our proposed SpotTUnet with the best existing unlearnable layer selection strategies within a supervised DA setup, demonstrating its effectiveness as an adaptation method and a tool for analyzing domain shift. Although many recent approaches have focused on achieving the best possible score on the target domain, our focus remains on understanding the domain shift and its impact on fine-tuning strategies.
 %While authors of \cite{singh2020adaptation} demonstrate SpotTune to perform worse than histogram matching preprocessing in the medical image classification task, we argue that histogram matching is a task-specific method and show its extremely poor segmentation quality in our task.
 % MultiTune \cite{wang2020multitune} has been recently developed as an alternative to SpotTune approach. However, it is not clear, whether the improvement comes from alternative architecture or from $L^2$-$SP$ regularization \cite{li2018explicit}, thus we separately validate $L^2$-$SP$ for SpotTune.
-
-% TODO: add L2SP to results :)
 
 
 \section{Methods}
@@ -85,29 +89,26 @@ We explored three distinct fine-tuning strategies:
 	
 \end{enumerate}
 
-\begin{figure}[!ht]
+
+Additionally, we introduced minor changes to keep up with the state-of-the-art level of architectures. We use residual blocks \cite{he2016deep} instead of simple convolutions, for this was shown to improve segmentation quality \cite{milletari2016v}. We also apply convolutional layer with $1 \times 1 \times 1$ kernel to the skip-connections. We change the channel-wise concatenation at the end of skip-connections to the channel-wise summation --  it reduces memory consumption and preserves the number of channels in the following residual blocks. We keep it without changes for the rest of the experiments. The network architecture and visual explanation for fine-tuning strategies are given in Figure~\ref{fig:mri:unet2d_da}. %To reduce the dependence of the results on the architecture we also carried out the experiments for vanilla U-Net.
+
+
+\begin{landscape}
+\begin{figure}[p]
+	\centering
 	\includegraphics[width=\linewidth]{Dissertation/Figures/2_mri/unet2d_da.pdf}
-	\caption{The architecture of 2D U-Net \cite{ronneberger2015u} with minor modification we use in our work. In the scenarios implying network weights freezing, either the first or last three convolutional layers are available for fine-tuning. These layers contain an equal amount of filters (16) of the same size, which means that in both scenarios an approximately equal number of parameters is fine-tuned.}
+	\caption{The architecture of 2D U-Net with minor modification we use in our work.} %In the scenarios implying network weights freezing, either the first or last three convolutional layers are available for fine-tuning. These layers contain an equal amount of filters (16) of the same size, which means that in both scenarios an approximately equal number of parameters is fine-tuned.}
 	\label{fig:mri:unet2d_da}
 \end{figure}
-
-Additionally, we introduced minor changes to keep up with the state-of-the-art level of architectures. We use residual blocks \cite{he2016deep} instead of simple convolutions, for this was shown to improve segmentation quality \cite{milletari2016v}. We also apply convolutional layer with $1 \times 1 \times 1$ kernel to the skip-connections. We change the channel-wise concatenation at the end of skip-connections to the channel-wise summation --  it reduces memory consumption and preserves the number of channels in the following residual blocks. We keep it without changes for the rest of the experiments. %To reduce the dependence of the results on the architecture we also carried out the experiments for vanilla U-Net.
-%TODO: appendix
+\end{landscape}
 
 
 \subsection{Adaptive fine-tuning}
 
-Supervised DA in medical image segmentation traditionally relies on explicit decisions regarding which layers of a neural network should be fine-tuned. However, as we discussed above, there is no clear consensus on whether the initial or final layers of the network should be targeted. Moreover, with the increasing complexity of neural network architectures---often involving skip connections and residual pathways---the challenge extends to identifying the ``first'' layers within these intricate structures. Residual networks, for instance, can behave like ensembles of shallower networks \cite{veit2016residual}, complicating the decision-making process regarding which layers to adapt for optimal domain transfer.
+Supervised DA in medical image segmentation traditionally relies on explicit decisions regarding which layers of a neural network should be fine-tuned. But there is no clear consensus on whether the initial or final layers should be targeted. Moreover, with the increasing complexity of neural network architectures---often involving skip connections and residual pathways---the challenge extends to identifying the ``first'' layers within these intricate structures. Residual networks, for instance, can behave like ensembles of shallower networks \cite{veit2016residual}, complicating the decision-making process regarding which layers to adapt for optimal domain transfer.
 %\cite{bakas2018identifying}
 
 To address these challenges, we propose an extension of the SpotTune framework \cite{guo2019spottune} tailored for supervised DA in medical image segmentation, which we call \textbf{SpotTUnet}. SpotTUnet introduces a dynamic and adaptive approach to layer selection, leveraging a policy network to make real-time decisions on whether to fine-tune or freeze specific layers within a network.
-
-\begin{figure}[!h]
-	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/2_mri/spottune_seg.pdf}
-	\caption{SpotTUnet architecture for the supervised DA in medical image segmentation. The U-Net backbone is pretrained on the source domain. This network is frozen (blue blocks) and has a copy (orange blocks) that is fine-tuned on the target domain. The policy network is simultaneously trained on the target domain to output binary decisions for each pair of blocks from the segmentation networks: use the frozen block (blue) vs. use the fine-tuned block (orange).}
-	\label{fig:spottune_seg}
-\end{figure}
 
 SpotTUnet consists of three main components: two copies of the main segmentation network and a policy network, as illustrated in Figure~\ref{fig:spottune_seg}. The segmentation  U-Net network, which is described in Section~\ref{sec:mri:method:sft}, is initially pretrained on the source domain dataset. Then, this model is duplicated into two versions and supplemented with the policy network:
 
@@ -125,6 +126,18 @@ SpotTUnet consists of three main components: two copies of the main segmentation
 	
 \end{enumerate}
 
+
+\begin{landscape}
+\begin{figure}[p]
+	\centering
+	\includegraphics[width=\linewidth]{Dissertation/Figures/2_mri/spottune_seg.pdf}
+	\caption{SpotTUnet architecture for the supervised DA in medical image segmentation.}% The U-Net backbone is pretrained on the source domain. This network is frozen (blue blocks) and has a copy (orange blocks) that is fine-tuned on the target domain. The policy network is simultaneously trained on the target domain to output binary decisions for each pair of blocks from the segmentation networks: use the frozen block (blue) vs. use the fine-tuned block (orange).}
+	\label{fig:spottune_seg}
+\end{figure}
+\end{landscape}
+
+
+
 The output for the $l$-th block is then computed as:
 
 \begin{equation}
@@ -134,21 +147,110 @@ The output for the $l$-th block is then computed as:
 \noindent
 where $F_l$ and $\tilde{F}_l$ represent the frozen and fine-tuned versions of the $l$-th block, respectively, and $I_l(x)$ is the binary indicator derived from the Policy Network’s prediction.
 
-Policy Network is trained concurrently with the fine-tuning of the segmentation network. During each iteration, Policy Network makes ``soft'' predictions for each block, which we binarize (into $I_l(x)$) to determine whether to use the frozen or fine-tuned block. To ensure gradient flow through the binary decision-making process, we employ the Gumbel-Softmax trick, as proposed in the original SpotTune methodology \cite{guo2019spottune}. This approach allows gradients to be propagated through the binary indicator $I_l(x)$, enabling end-to-end training.
-% TODO: expand on gumbel softmax; cite Gumbel-Softmax
+Policy Network is trained concurrently with the fine-tuning of the segmentation network. During each iteration, Policy Network makes ``soft'' predictions for each block, which we binarize (into $I_l(x)$) to determine whether to use the frozen or fine-tuned block. To ensure gradient flow through the binary decision-making process, we employ the Gumbel-Softmax trick~\cite{jang2017categorical} in the following way.% This approach allows gradients to be propagated through the binary indicator $I_l(x)$, enabling end-to-end training.
 
-In addition to the standard segmentation loss ($\mathcal{L}_{segm}$), we introduce a regularization term to control the number of blocks that are fine-tuned:
+The binary indicator $I_l(x) \in \{0, 1\}$ represents a discrete decision, which is inherently non-differentiable. To enable gradient-based optimization, we replace this hard decision with a differentiable approximation based on the Gumbel–Softmax (also known as the Concrete) distribution.
+
+Let the Policy Network produce for each block $l$ a pair of unnormalized logits
+
+\[
+\mathbf{z}_l(x) = [z_{l,0}(x),\, z_{l,1}(x)],
+\]
+
+\noindent
+corresponding to the probabilities of using the frozen ($I_l=0$) or fine-tuned ($I_l=1$) version of the block. The categorical sampling operation
+
+\[
+I_l(x) \sim \mathrm{Categorical}(\pi_{l,0}, \pi_{l,1}), \quad
+\pi_{l,i} = \frac{\exp(z_{l,i})}{\sum_{j} \exp(z_{l,j})},
+\]
+
+\noindent
+is replaced by a continuous relaxation:
 
 \begin{equation}
-	\mathcal{L} = \mathcal{L}_{segm} + \lambda \sum_{l=1}^N \left( 1 - I_l (x) \right),
+	\tilde{I}_l(x) =
+	\frac{
+		\exp\!\left((z_{l,1} + g_1)/\tau\right)
+	}{
+		\exp\!\left((z_{l,0} + g_0)/\tau\right) +
+		\exp\!\left((z_{l,1} + g_1)/\tau\right)
+	},
+	\label{eq:gumbelsoftmax}
 \end{equation}
 
 \noindent
-where $\mathcal{L}$ is the resulting loss and $\lambda$ is a regularization parameter that balances the segmentation performance and the number of fine-tuned blocks. The regularization term encourages the model to fine-tune fewer blocks, which is particularly beneficial when only a limited amount of annotated target data is available. %The intuition behind this approach is that fewer fine-tuned blocks reduce the risk of overfitting to the target domain.
+where $g_0, g_1$ are independent samples from the $\mathrm{Gumbel}(0,1)$ distribution,
 
-While the original SpotTune framework includes a more complex global policy (Global-k), which enforces uniform fine-tuning across all images by constraining them to adapt the same $k$ blocks, we propose a simplified regularization strategy. Our approach introduces an $\mathbb{L}_1$ regularization term that directly minimizes the total number of fine-tuned blocks, leading to a more deterministic and interpretable policy. With only one tunable parameter ($\lambda$), this approach is easier to optimize and more adaptable to different data availability scenarios. A higher $\lambda$ value enforces stronger regularization, leading to fewer fine-tuned blocks, which is especially desirable when the target domain data is limited.
+\[ g = -\log(-\log u), \quad u \sim \mathrm{Uniform}(0,1), \]
+
+\noindent
+and $\tau > 0$ is a temperature parameter controlling the smoothness of the approximation. In the limit $\tau \to 0$, the expression in~\eqref{eq:gumbelsoftmax} approaches a hard binary decision, while for higher $\tau$ values, it yields a smooth, differentiable interpolation between the two options. %During training, $\tau$ is typically annealed towards zero to gradually enforce discreteness while preserving gradient flow in the early stages of optimization.
+
+In our framework, we define the effective indicator as
+
+\[
+I_l(x) =
+\begin{cases}
+	1, & \tilde{I}_l(x) > 0.5, \\
+	0, & \text{otherwise},
+\end{cases}
+\quad \text{(forward pass)}
+\]
+
+\noindent
+while in the backward pass, gradients are propagated through the continuous relaxation $\tilde{I}_l(x)$. This approach ensures that the Policy Network receives meaningful gradients even though the decision process is discrete at inference time.
+% , often referred to as the \emph{straight-through Gumbel--Softmax estimator},
+
+\textbf{Regularization of the Adaptive Policy.} While the Gumbel–Softmax relaxation enables end-to-end optimization of the discrete adaptation policy, it does not by itself control the complexity of the resulting fine-tuning pattern. Without additional constraints, the Policy Network may assign all blocks to be fine-tuned, which can lead to over-parameterization and overfitting -- a critical issue when the amount of annotated target-domain data is limited.
+
+To address this, we introduce a regularization term that penalizes the number of fine-tuned blocks directly at the policy level. In addition to the standard segmentation loss~($\mathcal{L}_{segm}$), the total loss is defined as
+
+
+\begin{equation}
+	\mathcal{L} \;=\; \mathcal{L}_{segm}
+	\;+\;
+	\lambda \sum_{l=1}^{N} \big(1 - I_l(x)\big),
+	\label{eq:loss_total}
+\end{equation}
+
+\noindent
+where $\lambda$ is a regularization coefficient controlling the trade-off between segmentation performance and the sparsity of adaptation. This term can be viewed as an $\mathbb{L}_1$ penalty on the Policy Network’s binary outputs $\{I_l(x)\}_{l=1}^N$, directly encouraging the network to activate fewer fine-tuned blocks.
+
+Conceptually, this formulation replaces the global structural constraint used in the original SpotTune method~\cite{guo2019spottune}. In SpotTune, the so-called \emph{Global-$k$} policy enforces that all images share the same subset of $k$ fine-tuned layers, thereby coupling the adaptation decisions across the dataset. In contrast, our approach defines an \emph{instance-wise} policy governed by~\eqref{eq:loss_total}, in which each image $x$ may activate a different combination of fine-tuned and frozen blocks, while the $\mathbb{L}_1$ penalty ensures that the overall number of active (fine-tuned) blocks remains low.
+
+This modification has two main advantages. First, it provides a simpler and more interpretable regularization mechanism, with only one tunable hyperparameter~$\lambda$ instead of the discrete variable~$k$. Second, it better adapts to varying amounts of available target data: for larger datasets, the model can afford to fine-tune more blocks, whereas in low-data regimes, the regularization naturally promotes more frozen configurations, reducing overfitting risk. In practice, the $\mathbb{L}_1$ regularization term serves as an adaptive sparsity prior on the Policy Network outputs, enabling flexible yet controlled domain adaptation behavior across different training conditions.
 
 Below we compare SpotTUnet with the other fine-tuning approaches and extensively analyze domain shift anatomy using obtained Policy Network.
+
+
+%\paragraph{Policy learning and differentiable relaxation.}
+%Policy Network is trained concurrently with the fine-tuning of the segmentation network. During each iteration the Policy Network produces soft logits for each block, which are then mapped to a (relaxed) binary decision that selects between the frozen and fine-tuned versions of the block. To permit gradient flow through this inherently discrete decision we employ the Gumbel--Softmax (Concrete) relaxation [?]. Concretely, let the Policy Network output unnormalized logits
+%\[
+%\mathbf{z}_l(x) = \bigl(z_{l,0}(x),\, z_{l,1}(x)\bigr),
+%\qquad \pi_{l,i} = \frac{\exp(z_{l,i})}{\sum_j \exp(z_{l,j})}.
+%\]
+%We draw independent Gumbel samples $g_0,g_1 \overset{\mathrm{iid}}{\sim}\mathrm{Gumbel}(0,1)$ (via $g=-\log(-\log u)$, $u\sim\mathcal{U}(0,1)$) and form the continuous relaxation
+%\begin{equation}
+%	\tilde{I}_l(x) \;=\;
+%	\frac{\exp\bigl((z_{l,1}(x) + g_1)/\tau\bigr)}
+%	{\exp\bigl((z_{l,0}(x) + g_0)/\tau\bigr) + \exp\bigl((z_{l,1}(x) + g_1)/\tau\bigr)},
+%	\label{eq:gumbelsoftmax_relax}
+%\end{equation}
+%where $\tau>0$ is a temperature parameter. For training we use the straight-through style implementation: in the forward pass the binary indicator is taken as
+%\[
+%I_l(x) \;=\; \mathbf{1}\{\tilde{I}_l(x) > 0.5\},
+%\]
+%while in the backward pass gradients are propagated through the continuous quantity $\tilde{I}_l(x)$ (i.e., the backward pass uses $\partial \tilde{I}_l/\partial z$). This practical scheme reduces the train–test mismatch while preserving train-time gradient information. 
+%
+%The formal justification for replacing the discrete sampler by the Gumbel--Softmax relaxation is twofold. First, for any fixed $\tau>0$ the mapping in \eqref{eq:gumbelsoftmax_relax} is smooth and admits low-variance reparameterized gradients with respect to the logits, enabling standard backpropagation. Second, as the temperature is annealed, the Gumbel--Softmax distribution concentrates on the simplex vertices and its samples converge to one-hot samples from the categorical distribution; thus the relaxation smoothly interpolates between a fully continuous gate and the desired discrete gate, and optimizing the relaxed objective with an annealing schedule approximates optimizing the original discrete objective in the low-temperature limit. For details on the density, reparameterization and the limiting behaviour see \cite{Jang2017,Maddison2017}.
+%
+%Consequently, our full training objective remains
+%\[
+%\mathcal{L} \;=\; \mathcal{L}_{segm} \;+\; \lambda \sum_{l=1}^N \big(1 - I_l(x)\big),
+%\]
+%with $I_l(x)$ implemented as above (forward hard threshold, backward relaxed gradient). In practice we anneal $\tau$ during training and tune $\lambda$ to trade off segmentation accuracy and the number of fine-tuned blocks.
+
 
 
 \section{Experiments}
@@ -161,9 +263,39 @@ We conducted all experiments using the publicly available CC359 dataset \cite{so
 For preprocessing, we applied two straightforward steps. First, all scans were resampled to a uniform voxel resolution of $1 \times 1 \times 1$ mm using linear interpolation. Second, the voxel intensities of the resampled images were normalized to a range between 0 and 1 before being fed into the network. No additional preprocessing was applied to the data.
 
 
+\subsection{Experimental setup}
+%\label{sec:mri:exp:setup}
+
+We conducted three primary groups of experiments to evaluate our approach. Throughout this section, the term \textit{scan} refers to a complete 3D MRI study, while \textit{slice} denotes a 2D section of a scan.
+
+\textbf{Baseline and Oracle.} To assess the suitability of the CC359 dataset for DA experiments, we first established a \textbf{Baseline} for cross-domain model transferability. We trained six separate models, each on a distinct domain, and then tested each model across the remaining target domains. This Baseline provides a foundational comparison for subsequent experiments.
+
+The model's performance within the source domain was evaluated using 3-fold cross-validation, referred to as the \textbf{Oracle} score. This score represents the ``ideal'' reference score for all transfer methods, though it is theoretically possible for some methods to surpass Oracle in certain cases.
+
+In the subsequent transfer experiments, models trained on the entire source domain were transferred to target domains. We evaluated the effectiveness of these methods by calculating the fraction of the performance gap between the oracle and the baseline that each method was able to close. This metric provides a clear and interpretable measure of methods performance.
+
+
+\textbf{Predefined fine-tuning.} The first focus of our study is on three supervised domain adaptation strategies: fine-tuning the entire model (all layers), fine-tuning only the initial layers, and fine-tuning only the final layers.
+
+Our goal was to assess the performance of these strategies under varying conditions of data availability, particularly in scenarios with an extreme scarcity of target domain data. Preliminary experiments indicated that segmentation quality begins to decline when fewer than five scans are available, which aligns with findings from previous studies \cite{valverde2019one}, where segmentation performance decreased as the number of voxels in the ground truth mask was reduced. By using a 2D network, we were able to work with a subset of slices from a single scan instead of reducing the ground truth mask, which was not feasible for our task.
+
+We varied the amount of available data, starting with 3 and 1 target MRI scans. Leveraging our 2D architecture, we further subsampled slices from a single scan at fractions of $1/2$, $1/3$, $1/6$, $1/12$, $1/24$, and $1/36$. In these scenarios, slices were evenly sampled with a consistent step; for example, in the $1/3$ scenario, slices 0, 3, 6, and so forth were selected. The total numbers of slices available for fine-tuning are 800, 270, 135, 90, 45, 24, 12, 8, respectively.
+
+We repeat these experiments for each of the 30 source-target pairs in the CC359 dataset.
+
+
+\textbf{Adaptive fine-tuning.} Again, the six domains in the dataset yielded $30$ source-target pairs, leading to $30$ supervised DA experiments. Since we needed to select SpotTUnet hyperparameters, we reserved one source domain (Siemens, $1.5$ T) and its corresponding 5 source-target pairs for SpotTUnet validation, using the remaining 25 pairs to test designed DA approaches.
+
+For the $5$ validation pairs, we first tuned the temperature parameter of Gumbel-Softmax ($\tau$) through grid-search, exploring values $\tau \in \{ .01, .1 , .5, 1, 2, 5 \}$. The number of annotated slices from the target domain was fixed at 270 (equivalent to one scan). Next, we optimized the $\lambda$ parameter for each level of target data availability via grid-search over $\lambda \in \{0, 1, 3 , 5, 7, 10, 12, 15, 20 \} \times 10^{-3}$. The latter validation experiment and all testing experiments addressed the same scenarios for target data scarcity, with $8$, $12$, $24$, $45$, $90$, $270$, and $800$ slices available for fine-tuning. The optimal $\lambda$ value was fixed for each data scarcity scenario and applied to SpotTUnet during testing on the remaining $25$ pairs.
+
+%\textbf{Discussion of the additional setups.} Despite the authors of \cite{isensee2018no} suggest focusing on the pipeline rather than the peculiarities of an architecture, we support our claim with the same line of experiments with vanilla U-Net architecture \cite{ronneberger2015u}. Moreover, extremely limited amounts of data available raise the question of augmentation, thus we repeat all the experiments for both architectures, introducing simple augmentation techniques: rotations and symmetric flips. We place all the results for vanilla U-Net and the results for the original net trained with augmentation in Supplementary Materials while discussing them in Sec. \ref{sec:results}.
+
+%In our preliminary experiments we also tried other supervised DA setups. First, instead of fine-tuning, we trained the model from scratch on joint data from the source and the target domains. Secondly, we trained the model from scratch on data from the target domain only. We do not include aforementioned strategies in the further analysis for they yield extremely poor results.
+
+
 \subsection{Evaluation metrics}
 
-The quality in medical image segmentation problems is typically assessed using the Dice Score \cite{bakas2018identifying}, which is defined as:
+The quality in medical image segmentation problems is typically assessed using the Dice Score \cite{bakas2018identifying}, which is defined as
 
 \begin{equation}
 	\label{eq:dice_score}
@@ -173,10 +305,7 @@ The quality in medical image segmentation problems is typically assessed using t
 \noindent
 where $A$ and $B$ represent the predicted and ground truth masks (sets of voxels), respectively. This metric measures the voxel-wise overlap between the two masks, providing a volumetric assessment of segmentation quality. However, in brain segmentation, the accuracy of delineating the brain's edges is a crucial indicator of model performance. Given that edge regions constitute a relatively small portion of the brain's overall volume, the Dice Score may lack sensitivity in capturing the quality of boundary delineation.
 
-To address this limitation, we also employ the \textbf{Surface Dice Score} \cite{nikolov2021clinically}, which specifically evaluates how closely the predicted and ground truth surfaces align. Although the Surface Dice metric shares the same mathematical formula as the Dice Score (Eq. \ref{eq:dice_score}), in this context, $A$ and $B$ correspond to the surfaces of the segmented regions rather than entire volumes. The key difference lies in the concept of \textit{tolerance}, which specifies the maximum allowable distance between corresponding surface voxels for them to be considered as matching.
-
-
-For our experiments, we report results using a tolerance of 1 mm, as we find this threshold to be sufficiently sensitive to variations in the predictions across different methods.
+To address this limitation, we also employ the Surface Dice Score~\cite{nikolov2021clinically}, which specifically evaluates how closely the predicted and ground truth surfaces align. Although the Surface Dice metric shares the same mathematical formula as the Dice Score (\ref{eq:dice_score}), in this context, $A$ and $B$ correspond to the surfaces of the segmented regions rather than entire volumes. The key difference lies in the concept of \textit{tolerance}, which specifies the maximum allowable distance between corresponding surface voxels for them to be considered as matching. For our experiments, we report results using a tolerance of 1 mm, as we find this threshold to be sufficiently sensitive to variations in the predictions across different methods.
 
 To further evaluate the effectiveness of each domain adaptation (DA) method, we calculate the proportion of the gap between the Oracle and Baseline scores that the method closes. This proportion, denoted as $D_R$, is defined as follows:
 
@@ -187,7 +316,7 @@ Finally, to assess each DA method for a particular source-target pair we calcula
 \end{equation}
 
 \noindent
-where $D_O$ represents the Oracle Surface Dice Score on the target domain, $D_B$ is the Baseline score on the target domain, and $D$ is the score of the adaptation method under consideration. This metric provides a clear and interpretable measure of how effectively each DA method improves upon the Baseline, relative to the Oracle. Oracle and Baseline are defined in Section~\ref{sec:mri:exp:setup}.
+where $D_O$ represents the Oracle Surface Dice Score on the target domain, $D_B$ is the Baseline score on the target domain, and $D$ is the score of the adaptation method under consideration. This metric provides a clear and interpretable measure of how effectively each DA method improves upon the Baseline, relative to the Oracle.
 
 
 \subsection{Architecture and Training}
@@ -197,43 +326,6 @@ In this study, we opted for a 2D U-Net architecture \cite{ronneberger2015u} rath
 On the source domain, the model was trained for 100 epochs, beginning with a learning rate of $10^{-2}$, which was reduced to $10^{-3}$ at epoch 80. For domain transfer, we fine-tuned the model for 60 epochs, starting with a learning rate of $10^{-3}$ and reducing it to $10^{-4}$ at epoch 45. Each epoch comprised 100 iterations of stochastic gradient descent with Nesterov momentum (set to $0.9$). During each iteration, we randomly sampled a slice, cropped it to a size of $256 \times 256$, and formed a mini-batch of $32$ such samples, which were then passed through the network. Binary Cross-Entropy was used as the segmentation loss function ($\mathcal{L}_{segm}$).
 
 Training for 100 epochs required approximately 4 hours on a 16GB NVIDIA Tesla V100 GPU on Zhores supercomputer \cite{zacharov2019zhores}.
-
-
-\subsection{Experimental setup}
-\label{sec:mri:exp:setup}
-
-We conducted three primary groups of experiments to evaluate our approach. Throughout this section, the term \textit{scan} refers to a complete 3D MRI study, while \textit{slice} denotes a 2D section of a scan.
-
-
-\subsubsection{Baseline and Oracle}
-
-To assess the suitability of the CC359 dataset for DA experiments, we first established a \textbf{Baseline} for cross-domain model transferability. We trained six separate models, each on a distinct domain, and then tested each model across the remaining target domains. This Baseline provides a foundational comparison for subsequent experiments.
-
-The model's performance within the source domain was evaluated using 3-fold cross-validation, referred to as the \textbf{Oracle} score. This score represents the ``ideal'' reference score for all transfer methods, though it is theoretically possible for some methods to surpass Oracle in certain cases.
-
-In the subsequent transfer experiments, models trained on the entire source domain were transferred to target domains. We evaluated the effectiveness of these methods by calculating the fraction of the performance gap between the oracle and the baseline that each method was able to close. This metric provides a clear and interpretable measure of methods performance.
-
-
-\subsubsection{Predefined fine-tuning}
-
-The first focus of our study is on three supervised domain adaptation strategies: fine-tuning the entire model (\textbf{all layers}), fine-tuning only the \textbf{initial layers}, and fine-tuning only the \textbf{final layers}.
-
-Our goal was to assess the performance of these strategies under varying conditions of data availability, particularly in scenarios with an extreme scarcity of target domain data. Preliminary experiments indicated that segmentation quality begins to decline when fewer than five scans are available, which aligns with findings from previous studies \cite{valverde2019one}, where segmentation performance decreased as the number of voxels in the ground truth mask was reduced. By using a 2D network, we were able to work with a subset of slices from a single scan instead of reducing the ground truth mask, which was not feasible for our task.
-
-We varied the amount of available data, starting with 3 and 1 target MRI scans. Leveraging our 2D architecture, we further subsampled slices from a single scan at fractions of $1/2$, $1/3$, $1/6$, $1/12$, $1/24$, and $1/36$. In these scenarios, slices were evenly sampled with a consistent step; for example, in the $1/3$ scenario, slices 0, 3, 6, and so forth were selected. The total numbers of slices available for fine-tuning are 800, 270, 135, 90, 45, 24, 12, 8, respectively.
-
-We repeat these experiments for each of the 30 source-target pairs in the CC359 dataset.
-
-
-\subsubsection{Adaptive fine-tuning}
-
-Again, the six domains in the dataset yielded $30$ source-target pairs, leading to $30$ supervised DA experiments. Since we needed to select SpotTUnet hyperparameters, we reserved one source domain (Siemens, $1.5$ T) and its corresponding 5 source-target pairs for SpotTUnet validation, using the remaining 25 pairs to test designed DA approaches.
-
-For the $5$ validation pairs, we first tuned the temperature parameter of Gumbel-Softmax ($\tau$) through grid-search, exploring values $\tau \in \{ .01, .1 , .5, 1, 2, 5 \}$. The number of annotated slices from the target domain was fixed at 270 (equivalent to one scan). Next, we optimized the $\lambda$ parameter for each level of target data availability via grid-search over $\lambda \in \{0, 1, 3 , 5, 7, 10, 12, 15, 20 \} \times 10^{-3}$. The latter validation experiment and all testing experiments addressed the same scenarios for target data scarcity, with $8$, $12$, $24$, $45$, $90$, $270$, and $800$ slices available for fine-tuning. The optimal $\lambda$ value was fixed for each data scarcity scenario and applied to SpotTUnet during testing on the remaining $25$ pairs.
-
-%\textbf{Discussion of the additional setups.} Despite the authors of \cite{isensee2018no} suggest focusing on the pipeline rather than the peculiarities of an architecture, we support our claim with the same line of experiments with vanilla U-Net architecture \cite{ronneberger2015u}. Moreover, extremely limited amounts of data available raise the question of augmentation, thus we repeat all the experiments for both architectures, introducing simple augmentation techniques: rotations and symmetric flips. We place all the results for vanilla U-Net and the results for the original net trained with augmentation in Supplementary Materials while discussing them in Sec. \ref{sec:results}.
-
-%In our preliminary experiments we also tried other supervised DA setups. First, instead of fine-tuning, we trained the model from scratch on joint data from the source and the target domains. Secondly, we trained the model from scratch on data from the target domain only. We do not include aforementioned strategies in the further analysis for they yield extremely poor results.
 
 
 \section{Results}
@@ -260,58 +352,60 @@ We analyze how the relative improvement score $D_R$ depends on the amount of tra
 
 In Figure~\ref{fig:winners}, we report the number of source-target pairs where a given method outperforms the others (summing to 30 across all methods for each setup). Contrary to common assumptions, our results show that fine-tuning the initial layers significantly outperforms fine-tuning the final layers in our task. This finding suggests that low-level features, which correspond to the image's intensity profile, can be more effectively re-learned than high-level features, which are associated with different brain structures and distinct shapes.
 
-Moreover, under conditions of extreme data scarcity, fine-tuning the initial layers proves to be more advantageous than fine-tuning the entire model. This makes the former approach particularly valuable in practical scenarios where annotated target domain data is limited.
-
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{Dissertation/Figures/2_mri/winners_1.png}
 	\caption{Effectiveness of each domain adaptation strategy based on target domain data availability. Each bar represents the number of source-target pairs for which a given method is the most effective.}
 	\label{fig:winners}
 \end{figure}
 
+
+Moreover, under conditions of extreme data scarcity, fine-tuning the initial layers proves to be more advantageous than fine-tuning the entire model. This makes the former approach particularly valuable in practical scenarios where annotated target domain data is limited.
+
+
 The observed trends remain consistent even when substituting U-Net with residual blocks with the vanilla U-Net or adding augmentation. %\todo{Results for these setups are available in the Supplementary materials.}% TODO: add supplementary results to Appendix
 
 
 \subsection{Adaptive fine-tuning}
 
-We begin by tuning and selecting the hyperparameters for SpotTUnet through validation.
+%We begin by tuning and selecting the hyperparameters for SpotTUnet through validation.
 
 The temperature of the Gumbel-Softmax is set to $\tau = 0.1$, while the optimal regularization parameter $\lambda$ is determined separately for each data scarcity scenario; see Figure~\ref{fig:lambda}. It is important to note that the stability of Gumbel-Softmax training is highly sensitive to the choice of $\tau$, so we recommend validating different values of $\tau$ early in the deployment of SpotTune-like architectures.
 
-We found that a positive regularization term significantly benefits most data scarcity setups: the surface Dice Score with the optimal $\lambda$ is significantly higher ($p < 10^{-3}$, one-sided Wilcoxon signed-rank test) than that of the corresponding model without regularization. The only exception is the case with 800 available target slices (approximately three 3D images), where the optimal $\lambda$ is close to zero, and increasing $\lambda$ leads to a drop in quality; see Figure~\ref{fig:lambda}. This suggests that while SpotTUnet can learn the optimal policy without regularization when target data is abundant, regularization significantly enhances DA performance when target data is scarce.
-
-\begin{figure}[h!]
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{Dissertation/Figures/2_mri/k_reg.png}
-	\caption{Validation performance of SpotTUnet as a function of the regularization parameter $\lambda$. Each point represents the average Surface Dice Score across 5 validation experiments. Each line corresponds to a different amount of annotated data from the target domain, with bold points indicating the optimal $\lambda$ values in terms of Surface Dice Score.}
+	\caption{\textbf{Validation performance of SpotTUnet as a function of the regularization parameter $\lambda$.} Each point represents the average Surface Dice Score across 5 validation experiments. Each line corresponds to a different amount of annotated data from the target domain, with bold points indicating the optimal $\lambda$ values based on Surface Dice Score.}
 	\label{fig:lambda}
 \end{figure}
 
-% and \textit{histogram matching}
-%Histogram matching achieves an average surface Dice Score of only 0.29, which is even lower than the baseline average of 0.55, so we exclude both methods from further comparison in Figure~\ref{fig:sdcs}.
-Next, we compare SpotTUnet with the previously developed approaches: \textit{Fine-Tune All Layers} and \textit{Fine-Tune First Layers}. Strategy of \textit{fine-tuning the last layers} is excluded from comparison due to previously shown poor performance. Figure~\ref{fig:sdcs} shows the distributions of the surface Dice Scores (violin plots) alongside their average values (lines). Our results demonstrate that SpotTune performs on par with the best of the other methods, regardless of the severity of target data scarcity.
+We found that a positive regularization term significantly benefits most data scarcity setups: the surface Dice Score with the optimal $\lambda$ is significantly higher ($p < 10^{-3}$, one-sided Wilcoxon signed-rank test) than that of the corresponding model without regularization. The only exception is the case with 800 available target slices (approximately three 3D images), where the optimal $\lambda$ is close to zero, and increasing $\lambda$ leads to a drop in quality (Figure~\ref{fig:lambda}). This suggests that while SpotTUnet can learn the optimal policy without regularization when target data is abundant, regularization significantly enhances DA performance when target data is scarce.
 
-\begin{figure}[h!]
+Next, we compare SpotTUnet with the previously developed approaches: \textit{Fine-Tune All Layers} and \textit{Fine-Tune First Layers}. Strategy of \textit{fine-tuning the last layers} is excluded from comparison due to previously shown poor performance. Figure~\ref{fig:sdcs} shows the distributions of the Surface Dice Scores (violin plots) alongside their average values (lines). Our results demonstrate that SpotTune performs on par with the best of the other methods, regardless of the severity of target data scarcity.
+
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{Dissertation/Figures/2_mri/sdsc.png}
-	\caption{Performance of different methods as a function of target domain data availability.}
+	\caption{Performance of methods as a function of target domain data availability.}
 	\label{fig:sdcs}
 \end{figure}
 
 Finally, we examine the policy learned by SpotTUnet on the test data by calculating the frequency with which each layer is fine-tuned versus kept pretrained and frozen. The layer-wise visualization is shown in Figure~\ref{fig:layerswise_template}. We find that blocks in the encoder part of the U-Net are more frequently fine-tuned, particularly when annotated data is scarce. However, these are not necessarily the first layers (e.g., those preserving the original resolution), which contrasts with our previous findings, reported in \cite{shirokikh2020first}. We hypothesize that the SpotTUnet policy highlights layers that should be fine-tuned for optimal performance. Consequently, feature maps preceding these frequently fine-tuned layers might be more susceptible to domain shifts. It may be worthwhile to explore whether unsupervised DA approaches \cite{kamnitsas2017unsupervised, zhao2021robust} could benefit from passing these domain-shift-prone feature maps to adversarial networks---a hypothesis we leave for future research.
 
-\begin{figure}[h!]
+\begin{landscape}
+\begin{figure}[p]
 	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/2_mri/layerwise_template.pdf}
+	\includegraphics[width=\linewidth]{Dissertation/Figures/2_mri/layerwise_template.pdf}
 	\caption{Visualization of SpotTUnet's learned policy for different amounts of available target slices: 12 (upper-left), 45 (bottom-left), 270 (upper-right), and 800 (bottom-right). Colored blocks correspond to residual blocks, with triangular blocks indicating convolutions that perform $\times 2$ up- or down-sampling.}
 	\label{fig:layerswise_template}
 \end{figure}
+\end{landscape}
 
 The differences between the policies observed here and those reported in the original SpotTune paper \cite{guo2019spottune} (where mostly final layers were fine-tuned) can be attributed to the fundamental differences between Transfer Learning (TL) and DA. In TL, the data often varies significantly in nature, so fine-tuning the later layers is necessary. In DA, however, the datasets are semantically similar (e.g., brain MRI scans), meaning that domain shifts are primarily low-level, requiring fine-tuning of the earlier layers.
 
 
 \section{Summary}
 
-This study highlights a significant drop in segmentation quality when naively transferring models between the domains of the CC359 dataset. We hypothesize that the low-level feature maps in this dataset are more susceptible to domain shifts than those from deeper layers, making the initial layers a primary source of performance degradation. Our findings support this hypothesis, demonstrating that fine-tuning the initial layers yields better results than fine-tuning the final layers. Moreover, in scenarios with limited annotated data in the target domain, fine-tuning the initial layers proves to be more effective than fine-tuning the entire network.
+The study in this chapter highlights a significant drop in segmentation quality when naively transferring models between the domains of the CC359 dataset. We hypothesize that the low-level feature maps in this dataset are more susceptible to domain shifts than those from deeper layers, making the initial layers a primary source of performance degradation. Our findings support this hypothesis, demonstrating that fine-tuning the initial layers yields better results than fine-tuning the final layers. Moreover, in scenarios with limited annotated data in the target domain, fine-tuning the initial layers proves to be more effective than fine-tuning the entire network.
 
 We also introduce a new approach for supervised domain adaptation in medical image segmentation, called SpotTUnet. Our experiments show that SpotTUnet maintains the quality of previous methods while eliminating the need to switch between different approaches based on the availability of target data. Additionally, SpotTUnet autonomously learns which layers to fine-tune for optimal performance in the target domain, offering a valuable policy that identifies the network layers most affected by domain shifts. We believe this policy could guide the development of more robust unsupervised domain adaptation methods by specifically targeting the initial or SpotTUnet-identified layers.
 
