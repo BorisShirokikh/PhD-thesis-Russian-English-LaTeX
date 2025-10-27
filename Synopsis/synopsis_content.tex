@@ -14,14 +14,7 @@ The first chapter, \textbf{Domain Shift Anatomy}, focuses on understanding how d
 We begin by evaluating a supervised DA scenario, where the training and target domains represent the same content (e.g., brain MRI), but differ due to acquisition settings and scanner vendors. For this study, we employ the CC359 dataset~\cite{cc359}, and the segmentation task is performed using a U-Net model~\cite{unet}. An initial set of experiments demonstrates that fine-tuning only the first layers of a CNN (closest to the input) leads to better adaptation results compared to full-network or last-layer tuning. This suggests that the low-level feature maps, which capture basic visual patterns like edges and textures, are the most sensitive to acquisition variability.
 %We trained the model on the source domain and adapted to the target domain in a few-shot scenario, using 1 to 4 annotated target image slices.
 
-\begin{figure}[!h]
-	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/2_mri/spottune_seg.pdf}
-	\caption{SpotTUnet architecture. The U-Net backbone is pretrained on the source domain. This network is frozen (blue blocks) and has a copy (orange blocks) that is fine-tuned on the target domain. The policy network is simultaneously trained on the target domain to output binary decisions for each pair of blocks from the segmentation networks.}
-	\label{fig:spottune_seg}
-\end{figure}
-
-We then introduce SpotTUnet (Figure~\ref{fig:spottune_seg}), a method that automatically identifies which layers to fine-tune based on a learnable layer selection policy. Formally, the policy mechanism could be stated as follows. We compute the output for the $l$-th network layer as
+We then introduce SpotTUnet, a method that automatically identifies which layers to fine-tune based on a learnable layer selection policy. Formally, the policy mechanism could be stated as follows. We compute the output for the $l$-th network layer as
 
 
 \begin{equation}
@@ -29,10 +22,56 @@ We then introduce SpotTUnet (Figure~\ref{fig:spottune_seg}), a method that autom
 \end{equation}
 
 \noindent
-where $F_l$ and $\tilde{F}_l$ represent the frozen and fine-tuned versions of the $l$-th block, and $I_l(x)$ is the binary indicator derived from the Policy Network’s prediction.
+where $F_l$ and $\tilde{F}_l$ represent the frozen and fine-tuned versions of the $l$-th block and $I_l(x)$ is the binary indicator derived from the Policy Network’s prediction.
 
-Policy Network is trained concurrently with the fine-tuning of the segmentation network. During each iteration, Policy Network makes ``soft'' predictions for each block, which we binarize (into $I_l(x)$) to determine whether to use the frozen or fine-tuned block. To ensure gradient flow through the binary decision-making process, we employ the Gumbel-Softmax trick~\cite{guo2019spottune}, enabling end-to-end gradient-based training.
-% TODO: expand on gumbel softmax; cite Gumbel-Softmax
+Policy Network is trained concurrently with the fine-tuning of the segmentation network. During each iteration, Policy Network makes ``soft'' predictions for each block, which we binarize (into $I_l(x)$) to determine whether to use the frozen or fine-tuned block. To ensure gradient flow through the binary decision-making process, we employ the Gumbel-Softmax trick~\cite{jang2017categorical} in the following way.% This approach allows gradients to be propagated through the binary indicator $I_l(x)$, enabling end-to-end training.
+
+%The binary indicator $I_l(x) \in \{0, 1\}$ represents a discrete decision, which is inherently non-differentiable. To enable gradient-based optimization, we replace this hard decision with a differentiable approximation based on the Gumbel–Softmax (also known as the Concrete) distribution.
+
+Let the Policy Network produce for each block $l$ a pair of unnormalized logits $\mathbf{z}_l(x) = [z_{l,0}(x),\, z_{l,1}(x)],$ corresponding to the probabilities of using the frozen ($I_l=0$) or fine-tuned ($I_l=1$) version of the block. The categorical sampling operation
+
+\[
+I_l(x) \sim \mathrm{Categorical}(\pi_{l,0}, \pi_{l,1}), \quad
+\pi_{l,i} = \frac{\exp(z_{l,i})}{\sum_{j} \exp(z_{l,j})},
+\]
+
+\noindent
+is replaced by a continuous relaxation:
+
+\begin{equation}
+	\tilde{I}_l(x) =
+	\frac{
+		\exp\!\left((z_{l,1} + g_1)/\tau\right)
+	}{
+		\exp\!\left((z_{l,0} + g_0)/\tau\right) +
+		\exp\!\left((z_{l,1} + g_1)/\tau\right)
+	},
+	\label{eq:gumbelsoftmax}
+\end{equation}
+
+\noindent
+where $g_0, g_1$ are independent samples from the $\mathrm{Gumbel}(0,1)$ distribution,
+
+\[ g = -\log(-\log u), \quad u \sim \mathrm{Uniform}(0,1), \]
+
+\noindent
+and $\tau > 0$ is a temperature parameter controlling the smoothness of the approximation. In the limit $\tau \to 0$, the expression in~\eqref{eq:gumbelsoftmax} approaches a hard binary decision, while for higher $\tau$ values, it yields a smooth, differentiable interpolation between the two options. %During training, $\tau$ is typically annealed towards zero to gradually enforce discreteness while preserving gradient flow in the early stages of optimization.
+
+%In our framework, we define the effective indicator as
+%
+%\[
+%I_l(x) =
+%\begin{cases}
+%	1, & \tilde{I}_l(x) > 0.5, \\
+%	0, & \text{otherwise},
+%\end{cases}
+%\quad \text{(forward pass)}
+%\]
+
+%\noindent
+%while in the backward pass, gradients are propagated through the continuous relaxation $\tilde{I}_l(x)$. This approach ensures that the Policy Network receives meaningful gradients even though the decision process is discrete at inference time.
+In the backward pass, gradients are propagated through the continuous relaxation $\tilde{I}_l(x)$. This approach ensures that the Policy Network receives meaningful gradients even though the decision process is discrete at inference time.
+
 
 In addition to the standard segmentation loss ($\mathcal{L}_{segm}$), we introduce a regularization term to control the number of blocks that are fine-tuned:
 
@@ -40,14 +79,27 @@ In addition to the standard segmentation loss ($\mathcal{L}_{segm}$), we introdu
 	\mathcal{L} = \mathcal{L}_{segm} + \lambda \sum_{l=1}^N \left( 1 - I_l (x) \right).
 \end{equation}
 
-The $\mathbb{L}_1$ regularization term allows minimizing the total number of fine-tuned blocks, leading to a sparser, more deterministic and interpretable policy. As a result, SpotTUnet not only significantly outperforms other layer selection heuristics but also enables interpretable analysis of domain shift effects inside the model. Figure~\ref{fig:layerswise_template} illustrates a layer-wise shift sensitivity profile, highlighting the layers most affected by the domain differences.
+We present SpotTUnet architecture schematically in Figure~\ref{fig:spottune_seg} and the impact of proposed regularization on the sensitivity profile in Figure~\ref{fig:layerswise_template}.
 
-\begin{figure}[h!]
-	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/2_mri/layerwise_template.pdf}
-	\caption{Visualization of SpotTUnet's learned policy for different amounts of available target slices: 12 (upper-left), 45 (bottom-left), 270 (upper-right), and 800 (bottom-right).}
-	\label{fig:layerswise_template}
+\begin{landscape}
+	\begin{figure}[p]
+		\centering
+		\includegraphics[width=\linewidth]{Dissertation/Figures/2_mri/spottune_seg.pdf}
+		\caption{SpotTUnet architecture for the supervised DA in medical image segmentation.}% The U-Net backbone is pretrained on the source domain. This network is frozen (blue blocks) and has a copy (orange blocks) that is fine-tuned on the target domain. The policy network is simultaneously trained on the target domain to output binary decisions for each pair of blocks from the segmentation networks: use the frozen block (blue) vs. use the fine-tuned block (orange).}
+	\label{fig:spottune_seg}
 \end{figure}
+\end{landscape}
+
+\begin{landscape}
+	\begin{figure}[p]
+		\centering
+		\includegraphics[width=\linewidth]{Dissertation/Figures/2_mri/layerwise_template.pdf}
+		\caption{Visualization of SpotTUnet's learned policy for different amounts of available target slices: 12 (upper-left), 45 (bottom-left), 270 (upper-right), and 800 (bottom-right). Colored blocks correspond to residual blocks, with triangular blocks indicating convolutions that perform $\times 2$ up- or down-sampling.}
+		\label{fig:layerswise_template}
+	\end{figure}
+\end{landscape}
+
+The $\mathbb{L}_1$ regularization term allows minimizing the total number of fine-tuned blocks, leading to a sparser, more deterministic and interpretable policy. As a result, SpotTUnet not only significantly outperforms other layer selection heuristics but also enables interpretable analysis of domain shift effects inside the model. Figure~\ref{fig:layerswise_template} illustrates a layer-wise shift sensitivity profile, highlighting the layers most affected by the domain differences.
 
 The results of this chapter lay the conceptual foundation for later methods introduced in the thesis: F-Consistency, which leverages SpotTUnet’s layer selection for adaptation in CT images, and IHF, which builds on the finding of early-layer sensitivity by extracting domain-specific features directly from the input image.
 
@@ -86,62 +138,65 @@ However, in the real world, CT manufacturers use different filters that enhance 
 Thus, given a CT image $I$ obtained from a set of projections using one kernel, we can simulate the usage of another kernel as follows:
 \[\hat{I}(x, y) = \text{BP}\left(\mathcal{F}^{-1}\{\mathcal{F}[\mathcal{R}(I)]\cdot\mathcal{F}[k_{a,b}]\}\right).\]
 
-Here, $a$ and $b$ are the parameters that influence the sharpness or smoothness of an output image and $\mathcal{R}(I)$ is a Radon transform of image $I$. The output of the Radon transform is a set of projections. Figure~\ref{fig:crops} shows an example of applying the augmentation.
+Here, $\mathcal{R}(I)$ is a Radon transform. Parameters $a$ and $b$ influence the sharpness or smoothness of an output image, with the visual examples given in Figure~\ref{fig:crops}.
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{Dissertation/Figures/3_ct/4crops.png}%[width=7cm][width=7cm]
-	\caption{An example of paired CT slices and the effect of the augmentation by the proposed method.  The top row contains original images: a slice reconstructed with a smooth (a) and sharp kernel (b). The bottom row shows augmented images: the top-left image processed by FBPAug with parameters $a=30,~b=3$ shifting it from smooth to sharp (c); the top-right image processed by FBPAug with parameters $a=-1,~b=0.7$ from sharp to smooth (d).}
+	\includegraphics[width=0.95\linewidth]{Dissertation/Figures/3_ct/4crops.png}%[width=7cm][width=7cm]
+	\caption{An example of paired CT slices (top row) and the effect of the augmentation by the proposed method (bottom row).} %The top row contains original images: a slice reconstructed either with a smooth kernel (a) or sharp kernel (b). The bottom row shows augmented images: the top-left image processed by FBPAug with parameters $a=30,~b=3$ shifting it from smooth to sharp (c); the top-right image processed by FBPAug with parameters $a=-1,~b=0.7$ from sharp to smooth (d).}
 	\label{fig:crops}
 \end{figure}
 
+The top row contains original images: a slice reconstructed either with a smooth kernel (a) or sharp kernel (b). The bottom row shows augmented images: the top-left image processed by FBPAug with parameters $a=30,~b=3$ shifting it from smooth to sharp (c); the top-right image processed by FBPAug with parameters $a=-1,~b=0.7$ from sharp to smooth (d).
+
 This method produces synthetic images mimicking the effects of alternate kernels and significantly improves segmentation model generalization. In experiments on COVID-19 segmentation, FBPAug increases cross-kernel consistency from 0.46 to 0.76 in Dice score, almost achieving the level of DA methods that require additional data for fine-tuning (Table~\ref{tab:res_final}).
 
+\input{Dissertation/Tables/3_4_res_final}
 
-\begin{table}[h]
-	\centering
-	\caption{Comparison of DA methods in COVID-19 segmentation task. F-/P-Cons stand for F-/P-Consistency. All results are Dice Scores in the format \textit{mean} $\pm$ \textit{std} calculated from $5$-fold cross-validation. We highlight the best scores in every column in \textbf{bold}. \label{tab:res_final}}
-	\resizebox{\textwidth}{!}{%
-		\begin{tabular}{lccccccc}
-			\toprule
-			
-			& \multirow{2.5}{*}{\textbf{COVID-train}} & \multirow{2.5}{*}{\textbf{COVID-test}} & \multicolumn{5}{c}{\textbf{Paired-Private} \textbf{Consistency}} \\
-			\cmidrule(lr){4-8}
-			& & & \textbf{FC07/55} & \textbf{FC07/51} & \textbf{SOFT/LUNG} & \textbf{STAND/LUNG}  & \textbf{Mean} \\
-			
-			
-			\midrule
-			Baseline & $\mathbf{0.60 \pm 0.04}$ & $0.56 \pm 0.03$ & $0.52 \pm 0.06$ & $0.39 \pm 0.07$ & $0.58 \pm 0.08$ & $0.28 \pm 0.05$ & $0.46 \pm 0.05$\\
-			
-			\cmidrule{1-8}
-			
-			FBPAug & $0.59 \pm 0.04$ & $0.62 \pm 0.03$ & $0.80 \pm 0.02$ & $0.71 \pm 0.03$ & $0.85 \pm 0.01$ & $0.65 \pm 0.03$ & $0.76 \pm 0.02$ \\
-			
-			
-			\cmidrule{1-8}
-			
-			%DANN (Dec) & $.57 \pm 0.04$ & $.61 \pm 0.04$ &  $.61 \pm 0.02$ & $.49 \pm 0.04$ & $.58 \pm 0.03$ & $.31 \pm 0.05$ & $.52 \pm 0.01$ \\
-			
-			%\cmidrule{1-8}
-			
-			DANN  & $0.58 \pm 0.05$ & $\mathbf{0.64 \pm 0.02}$ & $0.84 \pm 0.02$ & $0.70 \pm 0.02$ & $\mathbf{0.86 \pm 0.03}$ & $0.66 \pm 0.06$ & $0.78 \pm 0.02$ \\
-			
-			\cmidrule{1-8}
-			
-			P-Cons & $0.59 \pm 0.04$ & $0.61 \pm 0.01$ & $0.65 \pm 0.05$ & $0.60 \pm 0.02$ & $0.77 \pm 0.01$ & $0.47 \pm 0.04$ & $0.63 \pm 0.03$\\
-			
-			\cmidrule{1-8}
-			
-			
-			%F-Cons (Dec) & $\mathbf{.60 \pm 0.03}$ & $.58 \pm 0.02$ & $.62 \pm 0.05$ & $.54 \pm 0.03$ & $.75 \pm 0.01$ & $.40 \pm 0.06$ & $.58 \pm 0.02$ \\
-			
-			%\cmidrule{1-8}
-			
-			F-Cons &  $0.57 \pm 0.03$ & $\mathbf{0.64 \pm 0.03}$ & $\mathbf{0.88 \pm 0.01}$ & $\mathbf{0.72 \pm 0.04}$ & $0.83 \pm 0.02$ & $\mathbf{0.70 \pm 0.05}$ & $\mathbf{0.80 \pm 0.01}$ \\
-			
-			\bottomrule
-	\end{tabular}}
-\end{table}
+%\begin{table}[h]
+%	\centering
+%	\caption{Comparison of DA methods in COVID-19 segmentation task. F-/P-Cons stand for F-/P-Consistency. All results are Dice Scores in the format \textit{mean} $\pm$ \textit{std} calculated from $5$-fold cross-validation. We highlight the best scores in every column in \textbf{bold}. \label{tab:res_final}}
+%	\resizebox{\textwidth}{!}{%
+%		\begin{tabular}{lccccccc}
+%			\toprule
+%			
+%			& \multirow{2.5}{*}{\textbf{COVID-train}} & \multirow{2.5}{*}{\textbf{COVID-test}} & \multicolumn{5}{c}{\textbf{Paired-Private} \textbf{Consistency}} \\
+%			\cmidrule(lr){4-8}
+%			& & & \textbf{FC07/55} & \textbf{FC07/51} & \textbf{SOFT/LUNG} & \textbf{STAND/LUNG}  & \textbf{Mean} \\
+%			
+%			
+%			\midrule
+%			Baseline & $\mathbf{0.60 \pm 0.04}$ & $0.56 \pm 0.03$ & $0.52 \pm 0.06$ & $0.39 \pm 0.07$ & $0.58 \pm 0.08$ & $0.28 \pm 0.05$ & $0.46 \pm 0.05$\\
+%			
+%			\cmidrule{1-8}
+%			
+%			FBPAug & $0.59 \pm 0.04$ & $0.62 \pm 0.03$ & $0.80 \pm 0.02$ & $0.71 \pm 0.03$ & $0.85 \pm 0.01$ & $0.65 \pm 0.03$ & $0.76 \pm 0.02$ \\
+%			
+%			
+%			\cmidrule{1-8}
+%			
+%			%DANN (Dec) & $.57 \pm 0.04$ & $.61 \pm 0.04$ &  $.61 \pm 0.02$ & $.49 \pm 0.04$ & $.58 \pm 0.03$ & $.31 \pm 0.05$ & $.52 \pm 0.01$ \\
+%			
+%			%\cmidrule{1-8}
+%			
+%			DANN  & $0.58 \pm 0.05$ & $\mathbf{0.64 \pm 0.02}$ & $0.84 \pm 0.02$ & $0.70 \pm 0.02$ & $\mathbf{0.86 \pm 0.03}$ & $0.66 \pm 0.06$ & $0.78 \pm 0.02$ \\
+%			
+%			\cmidrule{1-8}
+%			
+%			P-Cons & $0.59 \pm 0.04$ & $0.61 \pm 0.01$ & $0.65 \pm 0.05$ & $0.60 \pm 0.02$ & $0.77 \pm 0.01$ & $0.47 \pm 0.04$ & $0.63 \pm 0.03$\\
+%			
+%			\cmidrule{1-8}
+%			
+%			
+%			%F-Cons (Dec) & $\mathbf{.60 \pm 0.03}$ & $.58 \pm 0.02$ & $.62 \pm 0.05$ & $.54 \pm 0.03$ & $.75 \pm 0.01$ & $.40 \pm 0.06$ & $.58 \pm 0.02$ \\
+%			
+%			%\cmidrule{1-8}
+%			
+%			F-Cons &  $0.57 \pm 0.03$ & $\mathbf{0.64 \pm 0.03}$ & $\mathbf{0.88 \pm 0.01}$ & $\mathbf{0.72 \pm 0.04}$ & $0.83 \pm 0.02$ & $\mathbf{0.70 \pm 0.05}$ & $\mathbf{0.80 \pm 0.01}$ \\
+%			
+%			\bottomrule
+%	\end{tabular}}
+%\end{table}
 
 Secondly, we propose F-Consistency, a data-driven unsupervised DA technique that uses unlabeled paired reconstructions. By minimizing the mean squared error between intermediate feature maps of the paired images, F-Consistency encourages a domain-invariant representation. The additional optimization objective is formally defined as:
 
@@ -160,14 +215,7 @@ This method further boosts the average consistency to 0.80, outperforming the ot
 
 The third chapter, \textbf{Systematically Evaluating DA Methods in 3D Medical Image Segmentation}, presents a large-scale empirical study of domain adaptation techniques in 3D medical image segmentation. While domain shift is known to severely degrade model performance in these tasks, existing DA methods are often evaluated under overly narrow conditions. To address this gap, the chapter introduces a comprehensive benchmark, M3DA, and a novel Burdenko’s Glioblastoma Progression (BGP) dataset, specifically designed for evaluating the robustness and scalability of unsupervised DA methods under diverse and clinically relevant conditions.
 
-The benchmark consists of four publicly available multiclass segmentation datasets~\cite{amos,brats,cc359,lidc} and includes eight domain shift scenarios (Figure~\ref{fig:teaser2}). Each scenario is framed as an unsupervised domain adaptation problem formalized as follows:
-
-\begin{figure*}[h]
-	\centering
-	\includegraphics[width=1\linewidth]{Dissertation/Figures/4_da_bench/fig2_bench_examples.png}
-	\caption{Examples from individual domains in M3DA without segmentation masks for visual comparison between domains. Left to right, top to bottom: CT to MR, CT to LDCT, CT CE to CT native, CE T1 to T1, T1 Field (1.5T to 3T), T1 Scanner (Philips to Siemens).}
-	\label{fig:teaser2}
-\end{figure*}
+The benchmark consists of four publicly available multiclass segmentation datasets~\cite{amos,brats,cc359,lidc} and includes eight domain shift scenarios. Each scenario is framed as an unsupervised domain adaptation problem formalized as follows:
 
 First, we consider a semantic segmentation problem of 3D medical images, which we call a downstream task. Any downstream model works with input samples $x \in X$ and the corresponding segmentation masks $y \in Y$, where $X$ and $Y$ are some input image and label spaces. If $x \in \R^{H \times W \times D}$, segmentation mask is of the same spatial size $y \in \R^{H \times W \times D}$, where every element belongs to a predefined set of labels $y^{(h,w,d)} \in \{ 0, 1, \dots, C \}$, $0$ is background and $C$ is the number of foreground classes.
 
@@ -175,108 +223,17 @@ Following the standard problem setting~\cite{dann}, we assume that two distribut
 
 To assess the current state of the field, we evaluated over ten state-of-the-art DA techniques, including pixel-level generative, feature-level adversarial, and self-supervised approaches. Despite their apparent effectiveness in some scenarios, the results reveal that existing methods often fail to generalize beyond specific setups (Table~\ref{tab:metrics_pure}). For instance, the best-performing method (supplemented with the extensive data augmentation) reduces the performance drop caused by domain shift by only 62\% on average, leaving a significant residual gap (Table~\ref{tab:ablation_aug}). This finding underscores the need for robust and scalable DA strategies tailored to the unique challenges of 3D medical data.
 
-\begin{table}
-	\centering
-	\caption{Main results on M3DA benchmark in terms of multiclass average Dice score, where background label is excluded from quantification. The best results in each column are highlighted in \textbf{bold}. Case-wise standard deviations for these experiments are provided in parentheses.} %Foundational models UniModel and SAM-Med3D were finetuned in the baseline setting, similar to U-Net.}
-	
-	\resizebox{\textwidth}{!}{%
-		\begin{tabular}{lcccccccccc}
-			\toprule
-			& MR$\rightarrow$CT & CT$\rightarrow$MR & CT$\rightarrow$LDCT & CE CT$\rightarrow$CT & T1 CE$\rightarrow$T1 & T1 F & T1 Sc & T1 Mix & \textit{avg DSC} & \textit{avg gap} \\
-			
-			\midrule
-			
-			U-Net (Baseline)      & 0.032 (0.045) & 0.032 (0.038) & 0.133 (0.162) & 0.228 (0.265) & 0.426 (0.172) & 0.741 (0.067) & 0.766 (0.025) & 0.560 (0.159) & 0.365 & 0.0\% \\
-			
-			SAM-Med3D \cite{sammed} & 0.019 (0.013) & 0.037 (0.031) & 0.524 (0.120) & 0.412 (0.307) & 0.270 (0.155) & 0.645 (0.080) & 0.758 (0.035) & 0.486 (0.274) & 0.394 & -1.0\% \\
-			
-			
-			UniModel \cite{unimodel} & 0.027 (0.017) & 0.012 (0.013) & 0.252 (0.191) & \textbf{0.470 (0.313)} & 0.331 (0.143) & 0.740 (0.064) & 0.736 (0.038) & 0.618 (0.179) & 0.398 & 7.4\%\\
-			
-			\midrule
-			
-			% HM & 0.331 (0.182) & 0.222 (0.128) & 0.111 (0.174) & 0.133 (0.221) & 0.341 (0.183) & 0.789 (0.069) & 0.748 (0.090) & 0.504 (0.195) & 0.397 & -1.1\% \\
-			
-			CycleGAN 3D \cite{cyclegan3d} & 0.333 (0.128) & 0.264 (0.113) & 0.326 (0.175) & 0.130 (0.203) & 0.345 (0.175) & 0.791 (0.035) & 0.713 (0.023) & 0.762 (0.017) & 0.458 & 9.5\% \\ % \cite{cyclegan3d}
-			
-			MinEnt \cite{entropy} & 0.140 (0.136) & 0.172 (0.149) & 0.505 (0.127) & 0.392 (0.323) & 0.429 (0.168) & 0.770 (0.038) & 0.798 (0.025) & 0.776 (0.088) & 0.498 & 28.5\% \\
-			
-			CycleGAN 2D \cite{cyclegan} & 0.205 (0.153) & 0.406 (0.144) & 0.530 (0.187) & 0.216 (0.260) & 0.398 (0.181) & 0.852 (0.015) & 0.801 (0.027) & 0.795 (0.024) & 0.525 & 30.2\% \\ % \cite{cyclegan}
-			
-			GIN \cite{gin} & \textbf{0.589 (0.144)} & \textbf{0.637 (0.105)} & 0.722 (0.108) & 0.163 (0.238) & 0.382 (0.181) & 0.837 (0.066) & 0.709 (0.069) & 0.804 (0.062) & 0.605 & 33.6\% \\
-			
-			AdaBN \cite{adabn} & 0.322 (0.157) & 0.353 (0.177) & 0.587 (0.202) & 0.295 (0.291) & 0.433 (0.165) & 0.778 (0.042) & 0.833 (0.020) & 0.796 (0.059) & 0.550 & 35.0\% \\
-			
-			DANN \cite{dann_medim} & 0.296 (0.147) & 0.278 (0.135) & 0.699 (0.148) & 0.409 (0.297) & 0.416 (0.161) & 0.730 (0.078) & 0.833 (0.029) & 0.776 (0.082) & 0.555 & 36.2\% \\
-			
-			IN \cite{instance_norm} & 0.303 (0.149) & 0.308 (0.143) & 0.668 (0.167) & 0.427 (0.287) & 0.428 (0.155) & 0.756 (0.058) & 0.838 (0.025) & 0.784 (0.078) & 0.564 & 39.6\% \\ % \cite{instance_norm}
-			
-			MIND \cite{dg_tta} & 0.560 (0.171) & 0.588 (0.125) & 0.237 (0.148) & 0.425 (0.236) & 0.335 (0.162) & 0.865 (0.035) & 0.869 (0.039) & 0.845 (0.033) & 0.590 & 45.9\% \\
-			
-			Gamma augm     & 0.349 (0.182) & 0.166 (0.146) & 0.241 (0.230) & 0.441 (0.313) & 0.443 (0.163) & 0.893 (0.018) & \textbf{0.910 (0.006)} & 0.910 (0.012) & 0.544 & 48.3\% \\
-			
-			Self-Ensemble \cite{se_medim} & 0.391 (0.133) & 0.388 (0.101) & 0.603 (0.189) & 0.332 (0.291) & 0.388 (0.175) & 0.906 (0.023) & 0.893 (0.013) & \textbf{0.918 (0.018)} & 0.602 & 51.7\% \\
-			
-			nnAugm \cite{nnunet} & 0.166 (0.125) & 0.102 (0.090) & \textbf{0.779 (0.103)} & 0.392 (0.315) & \textbf{0.446 (0.164)} & \textbf{0.910 (0.010)} & 0.897 (0.012) & 0.889 (0.012) & 0.573 & 51.9\% \\
-			
-			% nnUNet          & 0.397 & 0.355 & 0.750 & 0.373 & 0.330 & 0.923 & 0.914 & 0.907 & 0.619 & 54.9\% \\
-			
-			% \midrule
-			
-			% best in setup & 0.589 & 0.637 & 0.779 & 0.470 & 0.446 & 0.910 & 0.910 & 0.918 & 0.704 & 72.9\% \\
-			
-			\midrule
-			
-			U-Net (Oracle)        & 0.842 (0.092) & 0.826 (0.035) & 0.814 (0.095) & 0.519 (0.297) & 0.686 (0.178) & 0.954 (0.017) & 0.957 (0.012) & 0.958 (0.009) & 0.820 & 100.0\% \\
-			
-			\bottomrule
-			
-	\end{tabular}}
-	\label{tab:metrics_pure}
-\end{table}
+%(Figure~\ref{fig:teaser2})
+%\begin{figure*}[h]
+%	\centering
+%	\includegraphics[width=1\linewidth]{Dissertation/Figures/4_da_bench/fig2_bench_examples.png}
+%	\caption{Examples from individual domains in M3DA without segmentation masks for visual comparison between domains. Left to right, top to bottom: CT to MR, CT to LDCT, CT CE to CT native, CE T1 to T1, T1 Field (1.5T to 3T), T1 Scanner (Philips to Siemens).}
+%	\label{fig:teaser2}
+%\end{figure*}
 
+\input{Dissertation/Tables/4_5_metrics_std_reduced}
 
-\begin{table}[ht]
-	\centering
-	\caption{Performance comparison of different methods supplemented with nnU-Net augmentations. Colored numbers show an improvement (or a decline, respectively) over a non-augmented method. GIN and MIND were only trained with nnU-Net augmentations.}
-	
-	% Add these color definitions to your preamble
-	\definecolor{darkGreen}{RGB}{0, 102, 0}     % For improvements > 0.15
-	\definecolor{medGreen}{RGB}{0, 153, 0}      % For improvements 0.05 to 0.15
-	\definecolor{lightGreen}{RGB}{144, 238, 144} % For small improvements 0 to 0.05
-	\definecolor{lightRed}{RGB}{255, 200, 200}   % For negative values
-	
-	\resizebox{\textwidth}{!}{%
-		\begin{tabular}{lcccccccccc}
-			\toprule
-			& MR$\rightarrow$CT & CT$\rightarrow$MR & CT$\rightarrow$LDCT & CE CT$\rightarrow$CT & T1 CE$\rightarrow$T1 & T1 F & T1 Sc & T1 Mix & \textbf{avg DSC} & \textbf{avg gap} \\
-			
-			\midrule
-			
-			% GIN & 0.589 & 0.637 & 0.722 & 0.163 & 0.382 & 0.837 & 0.709 & 0.804 & 0.605 & 33.6\% \\
-			
-			CycleGAN 3D & 0.364 \textcolor{lightGreen}{$\uparrow$0.031} & 0.464 \textcolor{darkGreen}{$\uparrow$0.200} & 0.679 \textcolor{darkGreen}{$\uparrow$0.353} & 0.221 \textcolor{medGreen}{$\uparrow$0.091} & 0.379 \textcolor{lightGreen}{$\uparrow$0.034} & 0.825 \textcolor{lightGreen}{$\uparrow$0.034} & 0.810 \textcolor{medGreen}{$\uparrow$0.097} & 0.779 \textcolor{lightGreen}{$\uparrow$0.017} & 0.565 \textcolor{medGreen}{$\uparrow$0.107} & 34.1\% \textcolor{darkGreen}{$\uparrow$24.6\%} \\
-			CycleGAN 2D & 0.301 \textcolor{medGreen}{$\uparrow$0.096} & 0.461 \textcolor{medGreen}{$\uparrow$0.055} & 0.666 \textcolor{medGreen}{$\uparrow$0.136} & 0.333 \textcolor{medGreen}{$\uparrow$0.117} & 0.416 \textcolor{lightGreen}{$\uparrow$0.018} & 0.865 \textcolor{lightGreen}{$\uparrow$0.013} & 0.850 \textcolor{lightGreen}{$\uparrow$0.049} & 0.815 \textcolor{lightGreen}{$\uparrow$0.020} & 0.588 \textcolor{medGreen}{$\uparrow$0.063} & 45.5\% \textcolor{medGreen}{$\uparrow$15.3\%} \\
-			
-			% MIND & 0.560 & 0.588 & 0.237 & 0.425 & 0.335 & 0.865 & 0.869 & 0.845 & 0.590 & 45.9\% \\
-			
-			Baseline (nnAugm) & 0.166 \textcolor{medGreen}{$\uparrow$0.134} & 0.102 \textcolor{medGreen}{$\uparrow$0.070} & 0.779 \textcolor{darkGreen}{$\uparrow$0.646} & 0.392 \textcolor{darkGreen}{$\uparrow$0.164} & 0.446 \textcolor{lightGreen}{$\uparrow$0.020} & 0.910 \textcolor{darkGreen}{$\uparrow$0.169} & 0.897 \textcolor{medGreen}{$\uparrow$0.131} & 0.889 \textcolor{darkGreen}{$\uparrow$0.329} & 0.573 \textcolor{darkGreen}{$\uparrow$0.208} & 51.9\% \textcolor{darkGreen}{$\uparrow$51.9\%} \\  % nnAugm (Baseline)
-			DANN        & 0.414 \textcolor{medGreen}{$\uparrow$0.118} & 0.349 \textcolor{medGreen}{$\uparrow$0.071} & 0.809 \textcolor{medGreen}{$\uparrow$0.110} & 0.411 \textcolor{lightGreen}{$\uparrow$0.002} & 0.403 \textcolor{lightRed}{$\downarrow$-0.013} & 0.899 \textcolor{darkGreen}{$\uparrow$0.169} & 0.848 \textcolor{lightGreen}{$\uparrow$0.015} & 0.885 \textcolor{medGreen}{$\uparrow$0.109} & 0.627 \textcolor{medGreen}{$\uparrow$0.072} & 54.9\% \textcolor{darkGreen}{$\uparrow$23.3\%} \\
-			
-			IN          & 0.422 \textcolor{medGreen}{$\uparrow$0.119} & 0.471 \textcolor{darkGreen}{$\uparrow$0.163} & 0.796 \textcolor{medGreen}{$\uparrow$0.128} & 0.410 \textcolor{lightRed}{$\downarrow$-0.017} & 0.416 \textcolor{lightRed}{$\downarrow$-0.012} & 0.907 \textcolor{darkGreen}{$\uparrow$0.151} & 0.854 \textcolor{lightGreen}{$\uparrow$0.016} & 0.883 \textcolor{medGreen}{$\uparrow$0.099} & 0.645 \textcolor{medGreen}{$\uparrow$0.081} & 58.1\% \textcolor{darkGreen}{$\uparrow$26.6\%} \\
-			AdaBN       & 0.495 \textcolor{darkGreen}{$\uparrow$0.173} & 0.532 \textcolor{darkGreen}{$\uparrow$0.179} & 0.604 \textcolor{lightGreen}{$\uparrow$0.017} & 0.365 \textcolor{medGreen}{$\uparrow$0.070} & 0.454 \textcolor{lightGreen}{$\uparrow$0.021} & 0.907 \textcolor{medGreen}{$\uparrow$0.129} & 0.890 \textcolor{medGreen}{$\uparrow$0.057} & 0.892 \textcolor{medGreen}{$\uparrow$0.096} & 0.642 \textcolor{medGreen}{$\uparrow$0.092} & 59.2\% \textcolor{darkGreen}{$\uparrow$24.2\%} \\
-			
-			SE          & 0.459 \textcolor{medGreen}{$\uparrow$0.068} & 0.571 \textcolor{darkGreen}{$\uparrow$0.183} & 0.768 \textcolor{darkGreen}{$\uparrow$0.165} & 0.389 \textcolor{medGreen}{$\uparrow$0.057} & 0.374 \textcolor{lightRed}{$\downarrow$-0.014} & 0.902 \textcolor{lightRed}{$\downarrow$-0.004} & 0.907 \textcolor{lightGreen}{$\uparrow$0.014} & 0.888 \textcolor{lightRed}{$\downarrow$-0.030} & 0.657 \textcolor{medGreen}{$\uparrow$0.055} & 60.1\% \enspace \textcolor{medGreen}{$\uparrow$8.4\%} \\
-			MinEnt      & 0.388 \textcolor{darkGreen}{$\uparrow$0.248} & 0.362 \textcolor{darkGreen}{$\uparrow$0.190} & 0.788 \textcolor{darkGreen}{$\uparrow$0.283} & 0.449 \textcolor{medGreen}{$\uparrow$0.057} & 0.448 \textcolor{lightGreen}{$\uparrow$0.019} & 0.903 \textcolor{medGreen}{$\uparrow$0.133} & 0.901 \textcolor{medGreen}{$\uparrow$0.103} & 0.892 \textcolor{medGreen}{$\uparrow$0.116} & 0.641 \textcolor{medGreen}{$\uparrow$0.143} & 62.0\% \textcolor{darkGreen}{$\uparrow$33.5\%} \\
-			
-			\midrule
-			% \textbf{Average improvement} & 0.376 \textcolor{medGreen}{$\uparrow$0.123} & 0.414 \textcolor{darkGreen}{$\uparrow$0.139} & 0.736 \textcolor{darkGreen}{$\uparrow$0.230} & 0.371 \textcolor{medGreen}{$\uparrow$0.068} & 0.417 \textcolor{lightGreen}{$\uparrow$0.009} & 0.890 \textcolor{medGreen}{$\uparrow$0.099} & 0.870 \textcolor{medGreen}{$\uparrow$0.060} & 0.865 \textcolor{medGreen}{$\uparrow$0.095} & 0.617 \textcolor{medGreen}{$\uparrow$0.103} \\
-			\textbf{average} &\textcolor{medGreen}{$\uparrow$0.123} & \textcolor{darkGreen}{$\uparrow$0.139} & \textcolor{darkGreen}{$\uparrow$0.230} & \textcolor{medGreen}{$\uparrow$0.068} & \textcolor{lightGreen}{$\uparrow$0.009} & \textcolor{medGreen}{$\uparrow$0.099} & \textcolor{medGreen}{$\uparrow$0.060} & \textcolor{medGreen}{$\uparrow$0.095} & \textcolor{medGreen}{$\uparrow$0.103} & \textcolor{darkGreen}{$\uparrow$26.0\%} \\  % 53.2\%
-			
-			\bottomrule
-	\end{tabular}}
-	\label{tab:ablation_aug}
-\end{table}
+\input{Dissertation/Tables/4_6_ablation_reduced}
 
 To support research under highly realistic clinical conditions, the chapter also presents the Burdenko’s Glioblastoma Progression (BGP) dataset. The BGP dataset contains MRI studies from 180 glioblastoma patients acquired for radiotherapy planning, with images sourced from four different scanner vendors and spanning diverse acquisition protocols. This allows researchers to test the generalization of models under in-the-wild domain shifts where the target domain is not fully known or controlled.
 
@@ -288,64 +245,39 @@ In summary, this chapter contributes a rigorous benchmarking suite for DA in 3D 
 
 The fourth chapter, \textbf{Benchmark for OOD in 3D Medical Image Segmentation}, addresses the critical challenge of out-of-distribution (OOD) detection in clinical deployment of segmentation models. While previous chapters focused on adapting models to known domain shifts, this chapter explores the complementary task of identifying when input data deviates significantly from the training distribution -- a prerequisite for safe model application in real-world medical environments.
 
-To systematically investigate this problem, the chapter introduces a dedicated benchmark for OOD detection in 3D medical image segmentation. The benchmark is designed around multiple clinically relevant use cases, where segmentation models are applied to samples that violate assumptions about modality, anatomy, or acquisition settings. These include acquisition protocol, patient population, and anatomical region changes and imaging artifact encounter in both CT (Figure~\ref{fig:ct}) and MRI (Figure~\ref{fig:mri}) modalities.
+To systematically investigate this problem, the chapter introduces a dedicated benchmark for OOD detection in 3D medical image segmentation. The benchmark is designed around multiple clinically relevant use cases, where segmentation models are applied to samples that violate assumptions about modality, anatomy, or acquisition settings. These include acquisition protocol, patient population, and anatomical region changes and imaging artifact encounter in both CT and MRI modalities.
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/ct_examples_2.pdf}
-	\caption{Examples of CT images (representative axial slices) from different simulated OOD sources in our benchmark.}
-	\label{fig:ct}
-\end{figure}
+%(Figure~\ref{fig:ct})
+%(Figure~\ref{fig:mri})
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/mri_examples_2.pdf}
-	\caption{Examples of MRI images (representative axial slices) from different simulated OOD sources in our benchmark.}
-	\label{fig:mri}
-\end{figure}
+%\begin{figure}[h]
+%	\centering
+%	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/ct_examples_2.pdf}
+%	\caption{Examples of CT images (representative axial slices) from different simulated OOD sources in our benchmark.}
+%	\label{fig:ct}
+%\end{figure}
+%
+%\begin{figure}[h]
+%	\centering
+%	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/mri_examples_2.pdf}
+%	\caption{Examples of MRI images (representative axial slices) from different simulated OOD sources in our benchmark.}
+%	\label{fig:mri}
+%\end{figure}
 
-The chapter evaluates several state-of-the-art OOD detection methods, including softmax-based confidence scores, Monte-Carlo dropout, and self-supervised approaches. Despite their success in 2D natural image tasks, most methods exhibit poor performance in the 3D medical setting, with high false positive rates (Table~\ref{tab:res_fpr}).
-
-\begin{table}[h]
-	\centering
-	\caption{Comparison of the considered OOD detection methods in terms of FPR@TPR95\% scores (lower is better). We highlight the best scores in every row in \textbf{bold} and ranked the methods by their average performance. The first and second sections correspond to CT and MRI setups, respectively.}
-	\resizebox{\textwidth}{!}{%
-		\begin{tabular}{llllllllll}
-			\toprule
-			\textbf{OOD Setup} &            \textbf{IHF-NN} &             \textbf{SVD} &             \textbf{IHF-Mah} &      \textbf{MOOD-1} &           \textbf{G-ODIN} &             \textbf{Volume} &   \textbf{MCD} & \textbf{Ensemble} &   \textbf{Entropy} \\
-			\midrule
-			Location (Head)           &  \textbf{0.00}  &  \textbf{0.00}  &  \textbf{0.00}  &            0.12 &            0.55 &            0.53 &  0.36 &     0.51 &  0.56 \\
-			Location (Liver)          &            0.51 &  \textbf{0.13}  &            0.64 &            0.56 &            0.56 &            0.84 &  0.89 &     0.93 &  0.78 \\
-			Population (COVID-19)     &            0.54 &            0.75 &            0.72 &  \textbf{0.51}  &            0.54 &            0.82 &  0.58 &     0.58 &  0.87 \\
-			Scanner                 &            0.88 &            0.89 &            0.85 &  \textbf{0.73}  &            0.92 &            0.86 &  0.89 &     0.90 &  0.83 \\
-			Synthetic (Elastic)       &  \textbf{0.15}  &            0.37 &            0.67 &            0.16 &            0.59 &            0.81 &  0.42 &     0.37 &  0.84 \\
-			Synthetic (Image noise)  &            0.49 &            0.37 &            0.62 &  \textbf{0.11}  &            0.89 &            0.85 &  0.87 &     0.82 &  0.81 \\
-			\midrule
-			Population (Glioblastoma) &  \textbf{0.00}  &  \textbf{0.00}  &  \textbf{0.00}  &            0.10 &            0.21 &            0.01 &  0.85 &     0.81 &  0.86 \\
-			Population (Healthy)      &  \textbf{0.00}  &  \textbf{0.00}  &  \textbf{0.00}  &            0.11 &  \textbf{0.00}  &  \textbf{0.00}  &  0.88 &     10.0 &  0.85 \\
-			Scanner                   &  \textbf{0.00}  &  \textbf{0.00}  &  \textbf{0.00}  &            0.15 &  \textbf{0.00}  &            0.74 &  0.63 &     0.66 &  0.89 \\
-			Synthetic (K-space noise) &  \textbf{0.00}  &            0.36 &  \textbf{0.00}  &            0.88 &            0.88 &            0.90 &  0.82 &     0.77 &  0.73 \\
-			Synthetic (Anisotropy)    &            0.09 &            0.20 &  \textbf{0.05}  &            0.57 &            0.88 &            0.93 &  0.77 &     0.77 &  0.81 \\
-			Synthetic (Motion)        &  \textbf{0.00}  &            0.58 &  \textbf{0.00}  &            0.73 &            0.93 &            0.94 &  0.85 &     0.88 &  0.91 \\
-			Synthetic (Image noise)   &            0.47 &            0.33 &            0.47 &  \textbf{0.30}  &            0.56 &            0.71 &  0.78 &     0.75 &  0.75 \\
-			\midrule
-			CT average                &            0.43 &            0.42 &            0.58 &  \textbf{0.36}  &            0.67 &            0.79 &  0.67 &     0.68 &  0.78 \\
-			MRI average               &            0.08 &            0.21 &  \textbf{0.07}  &            0.41 &            0.50 &            0.60 &  0.80 &     0.81 &  0.83 \\
-			\bottomrule
-	\end{tabular}}
-	\label{tab:res_fpr}
-\end{table}
+The chapter evaluates several state-of-the-art OOD detection methods, including softmax-based confidence scores, Monte-Carlo dropout, and self-supervised approaches. Despite their success in 2D natural image tasks, most methods exhibit poor performance in the 3D medical setting, with high false positive rates.% (Table~\ref{tab:res_fpr}).
 
 To complement these baselines, the chapter proposes a novel lightweight method, Intensity Histogram Features (IHF), which captures global image statistics using simple summary histograms of voxel intensities. As SpotTUnet-based analysis suggests, the earlier network's layers contain the most domain-specific information. Taking this analysis to the extreme, we hypothesize that we can extract enough domain-specific information directly from the image (i.e., the zeroth network's layer). A histogram is a convenient way to do so.
 
 We schematically present our method, called Intensity Histogram Features (IHF), in Figure~\ref{fig:ihf}. It consists of three steps: (1) calculating intensity histograms of images and using them as vectors, (2) reducing their dimensionality with PCA, and (3) running an outlier detection algorithm on these vectors.
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/method-1.pdf}
-	\caption{The proposed OOD detection method, called Intensity Histogram Features (IHF). It consists of three steps: calculating a $m$-dimensional vector as a histogram bin values from the preprocessed image (Step 1), fitting and applying PCA to the occuring data, and calculating Mahalanobis distance between a test vector and ID samples distribution (Step 3). We apply IHF to the 3D images and illustrate the process using 2D axial slices for simplicity. (* PCA is fitted once on all training data.)}
-	\label{fig:ihf}
-\end{figure}
+\begin{landscape}
+	\begin{figure}[p]
+		\centering
+		\includegraphics[width=\linewidth]{Dissertation/Figures/5_ood_bench/method-1.pdf}
+		\caption{The proposed OOD detection method, called \textit{Intensity Histogram Features (IHF)}.}
+		\label{fig:ihf}
+	\end{figure}
+\end{landscape}
 
 Step 1: preprocessing and histograms. All images undergo the same preprocessing pipeline to standardize the intensity distribution. Given a preprocessed image $x$, we compute a probability density function of its intensities in $m$ bins, a histogram $e(x) \in \mathbb{R}^m$, and further use these vectors $e(x)$.
 	
@@ -371,6 +303,8 @@ Alternatively, one can calculate the distance to the nearest neighbor (min-dista
 Using $S_{Mah}$ (Equation~\ref{eq:mah}) and $S_{NN}$ (Equation~\ref{eq:nn}) corresponds to the methods IHF-Mah and IHF-NN, respectively. We included them in our experiments independently.
 
 Despite its simplicity, IHF achieves competitive performance: ranking top-1 in multiple benchmark scenarios (Table~\ref{tab:res_fpr}) and ranked the top-2 solution in the Medical Out-of-Distribution Challenge (MOOD) in both 2022 and 2023~\cite{zimmerer2022mood}. The method’s efficiency and interpretability make it a strong candidate for integration into clinical pipelines.
+
+\input{Dissertation/Tables/5_3_res_fpr}
 
 In summary, this chapter reveals the limitations of current OOD detection methods in 3D medical image segmentation, provides a standardized evaluation framework and a strong OOD detection baseline for future research. Together with previous chapters, it contributes to the broader goal of building safe, adaptive, and deployable AI systems for medical imaging.
 

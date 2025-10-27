@@ -1,59 +1,57 @@
-%&preformat-synopsis
+% !TEX TS-program = xelatex
 \RequirePackage[l2tabu,orthodox]{nag} % Раскомментировав, можно в логе получать рекомендации относительно правильного использования пакетов и предупреждения об устаревших и нерекомендуемых пакетах
 
 % Откомментируйте, чтобы отключить генерацию закладок в pdf
 % \PassOptionsToPackage{bookmarks=false}{hyperref}
-\documentclass[a5paper,10pt,twoside,openany,article]{memoir} %,draft
+%\documentclass[a5paper,10pt,twoside,openany,article]{memoir}
+\documentclass[a4paper,14pt,oneside,openany]{memoir}
+% не нужно делать зеркальные страницы, обычный А4 формат, там шрифт 14 т.к., при отправке на печать типография сама уменьшает масштаб
 
 \input{common/setup}          % общие настройки шаблона
 \input{common/packages}       % Пакеты общие для диссертации и автореферата
-\synopsistrue                 % Этот документ --- автореферат
-\input{Synopsis/synpackages}  % Пакеты для автореферата
-\input{Synopsis/userpackages} % Пакеты для специфических пользовательских задач
+%\synopsistrue                 % Этот документ --- автореферат
+\synopsisfalse                      		% Этот документ --- не автореферат
 
-\input{common/newnames}       % Новые переменные, которые могут использоваться во всём проекте
+\input{Dissertation/dispackages} 		% Пакеты только для диссертации
+\input{Dissertation/setup}      		% Упрощённые настройки шаблона
+%\input{Synopsis/synpackages}  % Пакеты для автореферата
 \input{Synopsis/setup}        % Упрощённые настройки шаблона
 
+\input{common/newnames}       % Новые переменные, которые могут использоваться во всём проекте
+
 \input{common/data}           % Основные сведения
-\input{common/fonts}          % Определение шрифтов (частичное)
-\ifnumequal{\value{englishthesis}}{1}{
-    \input{common/styles_en}           % Стили общие для диссертации и автореферата
-}{
-    \input{common/styles}           % Стили общие для диссертации и автореферата
-}
+\input{common/styles_en}           % Стили общие для диссертации и автореферата
+
+% \geometry{a4paper, top=2cm, bottom=2cm, left=2.5cm, right=1cm, nofoot, nomarginpar}
 \input{Synopsis/synstyles}    % Стили для автореферата
+%\input{Dissertation/disstyles}  		% Стили для диссертации
+
 \input{Synopsis/userstyles}   % Стили для специфических пользовательских задач
 
-%%% Библиография. Выбор движка для реализации %%%
-\ifnumequal{\value{bibliosel}}{0}{%
-    \input{biblio/predefined} % Встроенная реализация с загрузкой файла через движок bibtex8
-}{
-    \input{biblio/biblatex}   %  Реализация пакетом biblatex через движок biber
-}
+%\newcommand\blank[1][\textwidth]{\noindent\rule[-.2ex]{#1}{.4pt}}
+%\input{Dissertation/userstyles} 		% Стили для специфических пользовательских задач
+\input{biblio/biblatex}   %  Реализация пакетом biblatex через движок biber
 
-% Вывести информацию о выбранных опциях в лог сборки
-\typeout{Selected options:}
-\typeout{Draft mode: \arabic{draft}}
-\typeout{Font: \arabic{fontfamily}}
-\typeout{AltFont: \arabic{usealtfont}}
-\typeout{Bibliography backend: \arabic{bibliosel}}
-\typeout{Precompile images: \arabic{imgprecompile}}
-% Вывести информацию о версиях используемых библиотек в лог сборки
-\listfiles
 
 \begin{document}
 
 \input{Synopsis/title}        % Титульный лист
 %\mainmatter                   % В том числе начинает нумерацию страниц арабскими цифрами с единицы
 \mainmatter*                  % Нумерация страниц не изменится, но начнётся с новой страницы
-\ifnumequal{\value{englishthesis}}{1}{
-    \input{Synopsis/title_en} 
-}{}
+\input{Synopsis/title_en}
 \mainmatter*                  % Нумерация страниц не изменится, но начнётся с новой страницы
+
 \input{Synopsis/synopsis_intro}
 % \input{common/characteristic}
+
+\ifnumequal{\value{contnumfig}}{1}{}{\counterwithout{figure}{chapter}}
+\ifnumequal{\value{contnumtab}}{1}{}{\counterwithout{table}{chapter}}
+
 \input{Synopsis/synopsis_content}
 \input{Synopsis/synopsis_refs}
+
+\ifnumequal{\value{contnumfig}}{1}{\counterwithout{figure}{chapter}}{\counterwithin{figure}{chapter}}
+\ifnumequal{\value{contnumtab}}{1}{\counterwithout{table}{chapter}}{\counterwithin{table}{chapter}}
 
 
 % \input{Synopsis/content}      % Содержание автореферата
