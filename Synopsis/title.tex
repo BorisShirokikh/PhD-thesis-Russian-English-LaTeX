@@ -45,7 +45,7 @@
 \newpage
 % оборотная сторона обложки
 \thispagestyle{empty}
-Работа выполнена в {\thesisOrganizationNonTitle}.
+Работа выполнена в {\thesisInOrganization} %{\thesisOrganizationNonTitle}
 
 \vspace{0.008\paperheight plus3fill}
 \noindent%
@@ -70,7 +70,7 @@
     \textbf{Научный руководитель:}   & \ifdefined\supervisorDead
                               \framebox{\textbf{\supervisorFio}}
                               \else
-                              \textbf{\supervisorFio  --- \supervisorRegalia}
+                              \textbf{{\supervisorFio} --- \supervisorRegalia}
                               \fi
                               \vspace{0.013\paperheight}\\
     \fi

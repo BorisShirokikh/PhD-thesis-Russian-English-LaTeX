@@ -96,7 +96,7 @@ The inverse problem of estimating MRI from CT is also an important application. 
 While these examples highlight the clinical relevance of domain adaptation between CT and MRI, for the purpose of this benchmark, we utilize a different dataset focusing on thoracic organ segmentation. This choice is motivated by the availability of a dataset that provides both MR and CT images with corresponding segmentation maps for thoracic organs, which is essential for evaluating the performance of UDA algorithms. Despite the difference in the target application, the underlying principles of domain adaptation remain the same, and the insights gained from this benchmark can be applied to various clinical scenarios.
 
 
-\textbf{CT $\rightarrow$ low-dose CT.} Second, we include a CT to low-dose CT (LDCT) shift, motivated by the increasing popularity of LDCT. LDCT produces images with a lower signal-to-noise ratio but are still diagnostically effective, resulting in several-fold lower radiation dosage exposure compared to regular CT (allowing for screening purposes \cite{lidc,kubo2016standard}), faster scanning time, mobility to scan underserved populations \cite{raghavan2020initial}, and cost-effectiveness \cite{mohammadshahi2019cost}. Similar to the CT $\leftrightarrow$ MRI domain shift, utilizing publicly available annotated regular CT scans can accelerate the development of automated segmentation models for LDCT. As demonstrated in Table~\ref{tab:metrics_pure}, methods trained on regular CT perform poorly on LDCT. This shift is the only one obtained via simulation, where we algorithmically simulate low-dose CT from regular ones.
+\textbf{CT $\rightarrow$ low-dose CT.} Second, we include a CT to low-dose CT (LDCT) shift, motivated by the increasing popularity of LDCT. LDCT produces images with a lower signal-to-noise ratio but are still diagnostically effective, resulting in several-fold lower radiation dosage exposure compared to regular CT (allowing for screening purposes \cite{lidc,kubo2016standard}), faster scanning time, mobility to scan underserved populations \cite{raghavan2020initial}, and cost-effectiveness \cite{mohammadshahi2019cost}. Similar to the CT $\leftrightarrow$ MRI domain shift, utilizing publicly available annotated regular CT scans can accelerate the development of automated segmentation models for LDCT. As we demonstrate below, methods trained on regular CT perform poorly on LDCT. This shift is the only one obtained via simulation, where we algorithmically simulate low-dose CT from regular ones.
 
 
 \textbf{Contrast enhancement $\rightarrow$ no contrast enhancement.} Third, we include two tasks, MRI and CT, involving domain transfer from a contrast-enhanced (CE) image to an image without contrast enhancement (native). CE injection is a labor-intensive step, requiring additional training for personnel and carrying a small but additional risk for patients \cite{andreucci2014side,costelloe2020risks}. Again, we suggest benchmarking DA methods against the scenario where models that utilized richer imaging modalities (CE) during supervised training are adapted for safer modalities (non-contrast-enhanced).
@@ -195,11 +195,11 @@ Finally, several advanced augmentation techniques were developed for domain gene
 
 \subsection{Backbone Selection}
 
-We evaluated four segmentation backbones (U-Net, UNETR~\cite{unetr}, SwinUNETR~\cite{swinunetr}, and MedNeXt~\cite{mednext}) to determine an optimal baseline architecture for our experiments; see Table~\ref{tab:backbones}. For comparison, we included two pretrained models: SAM-Med3D~\cite{sammed} and UniModel~\cite{unimodel}, which are based on UNETR and SwinUNETR architectures, respectively, and used officially published model weights. Our analysis of the foundational models (SAM-Med3D and UniModel) finetuned in supervised fashion yielded three key observations.
+We evaluated four segmentation backbones (U-Net, UNETR~\cite{unetr}, SwinUNETR~\cite{swinunetr}, and MedNeXt~\cite{mednext}) to determine an optimal baseline architecture for our experiments; see Table~\ref{tab:backbones}. For comparison, we included two pretrained models: SAM-Med3D~\cite{sammed} and UniModel~\cite{unimodel}, which are based on UNETR and SwinUNETR architectures, respectively, and used officially published model weights.
 
 \input{Dissertation/Tables/4_4_backbones}
 
-First, both models demonstrated improved performance compared to their respective base architectures (UNETR and SwinUNETR). Second, we observed that both models slightly underperformed in 4 out of 5 MRI tasks compared to their counterparts trained from scratch, potentially due to their pretraining being predominantly conducted on CT data. Third, neither of them surpassed the performance of a standard U-Net trained from scratch.
+Our analysis of the foundational models (SAM-Med3D and UniModel) finetuned in supervised fashion yielded three key observations. First, both models demonstrated improved performance compared to their respective base architectures (UNETR and SwinUNETR). Second, we observed that both models slightly underperformed in 4 out of 5 MRI tasks compared to their counterparts trained from scratch, potentially due to their pretraining being predominantly conducted on CT data. Third, neither of them surpassed the performance of a standard U-Net trained from scratch.
 
 MedNeXt performed on par with regular U-Net, however failed to converge on LIDC dataset on multiple runs attempts. % for unknown reason.
 Based on these results, we selected the U-Net architecture as our primary backbone.
@@ -209,7 +209,7 @@ Based on these results, we selected the U-Net architecture as our primary backbo
 
 
 
-We evaluated various DA methods on the M3DA benchmark using multi-class Dice score and the \textit{percentage of performance gap} closed between the Baseline and Oracle setups: 
+We evaluated various DA methods on our benchmark using multi-class Dice score and the \textit{percentage of performance gap} closed between Baseline and Oracle: 
 
 \[
 100\times \frac{\text{Method}_{\text{Dice}} - \text{Baseline}_{\text{Dice}}}{\text{Oracle}_{\text{Dice}} - \text{Baseline}_{\text{Dice}}}.

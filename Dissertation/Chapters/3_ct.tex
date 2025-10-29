@@ -109,7 +109,9 @@ where $\mathcal{R}(I)$ denotes the Radon transform of the image. Unlike purely s
 	\includegraphics[width=\linewidth]{Dissertation/Figures/3_ct/4crops.png}%[width=7cm][width=7cm]
 	\caption{\textbf{An example of paired CT slices (top row) and the effect of the augmentation by the proposed method (bottom row).} The top row contains original images: a slice reconstructed either with a smooth kernel (a) or sharp kernel (b). The bottom row shows augmented images: the top-left image processed by FBPAug with parameters $a=30,~b=3$ shifting it from smooth to sharp (c); the top-right image processed by FBPAug with parameters $a=-1,~b=0.7$ from sharp to smooth (d).}
 	\label{fig:crops}
+	\vspace{2\baselineskip}
 \end{figure}
+
 
 
 \subsection{Cross-Domain Features Consistency}
@@ -249,25 +251,28 @@ Next, we observe a significant disagreement in predictions on paired (\textit{sm
 	\includegraphics[width=\textwidth]{Dissertation/Figures/3_ct/contours_new.png}
 	\caption{Example FBPAug predictions. Left -- image reconstructed with a \textit{smooth} kernel. Right -- image reconstructed with a \textit{sharp} kernel from the same sinogram.}
 	\label{fig:fbpaug_pred}
+	\vspace{2\baselineskip}
 \end{figure}
+
+\FloatBarrier % forces LaTeX to place all pending floats before continuing
 
 
 \subsection{F-consistency experiments and results}
 
-We compare some of the key results statistically using a one-sided Wilcoxon signed-rank test. We report p-values in two testing setups: $p_1$ -- comparing five mean values after cross-validation, and $p_2$ -- comparing Dice Score on every image as an independent sample.
+We compare some of the key results statistically using a one-sided Wilcoxon signed-rank test. We report p-values in two testing setups: $p_1$ -- comparing five mean values after cross-validation, and $p_2$ -- comparing Dice Scores on every image.% as an independent sample.
 
 
-\textbf{Methods comparison.} To begin with, we show the existence of the domain shift problem within the COVID-19 segmentation task. The Dice Score of the baseline model on the COVID-test dataset is lower than the cross-validation score on the COVID-train dataset, $0.56$ against $0.60$. Also, this score is significantly lower than $0.64$ achieved by our adaptation method $\left(p_1 < 0.05,\: p_2 < 10^{-4} \right)$. Results could be found in Table~\ref{tab:res_final} comparing row Baseline to the others. For all adaptation methods, we observe an increase in the consistency score and segmentation quality on the target domain. Moreover, all methods maintain their quality on the source domain compared to Baseline.
+\textbf{Methods comparison.} To begin with, we show the existence of the domain shift problem within the COVID-19 segmentation task. The Dice Score of the baseline model on the COVID-test dataset is lower than the cross-validation score on the COVID-train dataset, $0.56$ against $0.60$. Also, this score is significantly lower than $0.64$ achieved by our adaptation method $\left(p_1 < 0.05,\: p_2 < 10^{-4} \right)$. See Table~\ref{tab:res_final}, comparing row Baseline to the others. For all adaptation methods, we observe an increase in the consistency score and segmentation quality on the target domain. Moreover, all methods maintain their quality on the source domain compared to Baseline.
 
 \input{Dissertation/Tables/3_4_res_final}
 
 % Further, we compare FBPAug to the best adaptation methods since it is a straightforward solution to the domain shift problem caused by the difference in the reconstruction kernels. Although FBPAug achieves comparable results on the target domain, F-Consistency outperforms it in terms of the average consistency score, $0.80$ Dice Score against $0.76$ $\left(p_1 < 0.05,\: p_2 < 10^{-5}\right)$. The results are also in Table~\ref{tab:res_final}, row FBPAug.
 
-We compare P-Consistency (which operates with the last layer of decoder) with F-Consistency and show it resulting in the significantly lower consistency score, $0.63$ against $0.80$ $\left(p_1 < 0.05,\: p_2 < 10^{-10}\right)$. Thus, our findings align with the message of~\cite{zakazov2021anatomy} that the encoder layers contain more domain-specific information than the decoder ones.
+We compare P-Consistency (operating with the last layer) with F-Consistency and show that it results in the significantly lower consistency score, $0.63$ against $0.80$ $\left(p_1 < 0.05,\: p_2 < 10^{-10}\right)$. Thus, our findings align with the message of~\cite{zakazov2021anatomy} that the encoder layers contain more domain-specific information than the decoder ones.
 
-F-consistency outperforms DANN. Although both methods score similar in target Dice Score, F-Consistency has an advantage over DANN in the consistency score: $0.80$ against $0.78$ $\left(p_1 < 0.05,\: p_2 < 10^{-2}\right)$. Our intuition here is F-Consistency explicitly enforces features alignment, while DANN enforces features to be indistinguishable for the discriminator. The latter differently impact the consistency score, and F-Consistency performs better.
+F-consistency outperforms DANN. Although both methods score similar in target Dice Score, F-Consistency has an advantage over DANN in the consistency score: $0.80$ against $0.78$ $\left(p_1 < 0.05,\: p_2 < 10^{-2}\right)$. Our intuition here is F-Consistency explicitly enforces features alignment, while DANN enforces features to be indistinguishable for the discriminator. And the direct alignment appears to be more efficient.
 
-We conclude comparison of the methods with the qualitative analysis. In Figure~\ref{fig:test_preds}, one could find examples of the Baseline, FBPAug, DANN, and F-Consistency predictions on the COVID-test dataset and compare them with the ground truth. All adaptation methods perform similar to the ground truth with minor inaccuracies, while Baseline gives massive false positive predictions on the unseen domain.%With the quantitative analysis above, these observations highlight the relevance of the domain adaptation problem in the COVID-19 segmentation task.
+We conclude comparison of the methods with the qualitative analysis. In Figure~\ref{fig:test_preds}, we provide examples of the Baseline, FBPAug, DANN, and F-Consistency predictions on the COVID-test dataset and compare them with the ground truth. All adaptation methods perform similar to the ground truth with minor inaccuracies, while Baseline gives massive false positive predictions on the unseen domain.%With the quantitative analysis above, these observations highlight the relevance of the domain adaptation problem in the COVID-19 segmentation task.
 
 \begin{figure}[h]
 	\centering
@@ -276,7 +281,7 @@ We conclude comparison of the methods with the qualitative analysis. In Figure~\
 	\label{fig:test_preds}
 \end{figure}
 
-In Figure~\ref{fig:consistency_preds}, we visualize predictions of the same four methods on the paired images from the Paired-private dataset. For the Baseline, we observe an extreme inconsistency (Figure~\ref{fig:consistency_preds}~A) and massive false positive predictions in healthy lung tissues (Figure~\ref{fig:consistency_preds}~D) and even outside lungs (Figure~\ref{fig:consistency_preds}~B). For the adaptation methods, their predictions are visually more consistent inside every pair. Despite the high consistency scores, FBPAug and DANN output more aggressive predictions. FBPAug predicts motion artifacts near the body regions (Figure~\ref{fig:consistency_preds}~A) and triggers similarly to the Baseline on healthy lung tissues (Figure~\ref{fig:consistency_preds}~B). DANN is more conservative but triggers on the consolidation-like tissues (Figure~\ref{fig:consistency_preds}~C,~D). However, without the ground truth annotations on the paired data, we refer to this analysis as a discussion.
+In Figure~\ref{fig:consistency_preds}, we visualize predictions on the paired images from the Paired-private dataset. For the Baseline, we observe an extreme inconsistency (Figure~\ref{fig:consistency_preds}~A) and massive false positive predictions in healthy lung tissues (Figure~\ref{fig:consistency_preds}~D) and outside lungs (Figure~\ref{fig:consistency_preds}~B). Predictions of the adaptation methods are visually more consistent inside every pair. Despite the high consistency scores, FBPAug and DANN output more aggressive predictions. FBPAug predicts motion artifacts near the body regions (Figure~\ref{fig:consistency_preds}~A) and triggers on healthy lung tissues (Figure~\ref{fig:consistency_preds}~B). DANN is more conservative but triggers on the consolidation-like tissues (Figure~\ref{fig:consistency_preds}~C,~D).% However, without the ground truth annotations on the paired data, we refer to this analysis as a discussion.
 
 \begin{landscape}
 \begin{figure}[p]

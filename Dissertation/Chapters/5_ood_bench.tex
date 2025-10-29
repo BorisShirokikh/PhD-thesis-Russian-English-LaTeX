@@ -277,9 +277,10 @@ We also conducted an ablation study to verify IHF robustness. As shown in Figure
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/ihf_hyp.pdf}
+	% \includegraphics[width=\linewidth]{Dissertation/Figures/5_ood_bench/ihf_hyp.pdf}
+	\includegraphics[width=\linewidth]{Dissertation/Figures/5_ood_bench/ihf_hyp_gost.pdf}
 	\caption{Dependence of IHF on its two hyperparameters: the number of histogram bins ($m$) and explained variance in PCA ($v$).}% We give the results for both IHF variants and CT and MRI setups.}
-	\label{fig:ihf_hyp}
+\label{fig:ihf_hyp}
 \end{figure}
 
 Both IHF variants performed comparably or better on average than SVD and, consequently, the other studied methods. Therefore, we conclude that the histograms of image intensities are descriptive enough to detect most of the suggested OOD cases. At the same time, neural networks might omit important domain features in this problem. We thus hypothesize that neural networks-based OOD detection can be further improved and leave this promising direction for future research.
@@ -314,12 +315,15 @@ To ensure the methods' generalization, we calculate the Fechner correlation betw
 
 We show the OOD detection results on synthetic data for different distortion levels in Figure~\ref{fig:fpr_sev}. Distortion levels were chosen perceptually from 1 (barely noticeable distortion) to 5 (heavily distorted image). The general trend is that more distorted images are easier to detect. Here, SVD exhibited the steepest average slope and behaved almost linearly with the increasing severity level, suggesting that we have considered challenging but solvable tasks. Different methods exhibited different sensitivity to the level of distortion required for detection. Entropy and the other UE methods started to operate effectively only at level 3, while IHF detected anomalies at a minimal level. So, we conclude that the methods should be studied across a wide range of anomaly severity levels. Additionally, we show that MOOD-1 depends more on the OOD source than the severity level: it failed in Motion and K-space setups while almost perfectly detecting Noise and Elastic deformations independently of the severity level. Moreover, MOOD-1 and IHF behaved inversely to each other in Noise and Elastic setups. Such diverse behavior suggests the need to study methods across a wide range of anomaly types.
 
-\begin{figure}[ht]
+\begin{landscape}
+\begin{figure}[p]
 	\centering
-	\includegraphics[width=\textwidth]{Dissertation/Figures/5_ood_bench/fpr_sev.pdf}
+	\includegraphics[width=\linewidth]{Dissertation/Figures/5_ood_bench/fpr_sev.pdf}
 	\caption{FPR under synthetically distorted data for every distortion severity level. Blue line indicates method's average trend across presented challenges with 95\% confidence interval. The other UE methods (MCD, Ensemble, and G-ODIN) are excluded since their average trend is similar to Entropy.}
 	\label{fig:fpr_sev}
 \end{figure}
+\end{landscape}
+
 
 
 \section{Summary}
