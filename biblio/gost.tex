@@ -6,7 +6,6 @@
 \DeclareFieldFormat{pages}{P.\ #1}
 % For some reason, it does not print "P." in the case of a single page.
 
-
 \newbibmacro*{my:urldate}{\printtext{(visited on \thefield{urlmonth}/\thefield{urlday}/\thefield{urlyear})}}
 
 
@@ -50,6 +49,25 @@
 }
 
 
+\newbibmacro*{my:reg}{%
+	% 1) Authors
+	\printnames{author}%
+	\setunit{\addspace/\space}%
+	% 2) Title
+	\printfield[titlecase]{title}%
+	\setunit{\addspace//\space}%
+	% 3) Heading
+	\printfield[emph]{heading}%
+	\newunit\newblock%
+	% 4) Reg ID
+	\printtext{No. \thefield{requestnumber}, \thefield{publicationmonth}/\thefield{publicationday}/\thefield{publicationyear} (\thefield{prioritycountry})}%
+	%\newunit\newblock%
+	% 4) URL
+	%\printfield{url}\setunit{\space}%
+	%\usebibmacro{my:urldate}%
+}
+
+
 % --- Force AUTHOR-FIRST layout ---
 \makeatletter
 \AtBeginDocument{%
@@ -81,6 +99,12 @@
 		\usebibmacro{bibindex}%
 		\usebibmacro{begentry}%
 		\usebibmacro{my:online}%  ← your logic
+		\usebibmacro{finentry}%
+	}%
+	\DeclareBibliographyDriver{patent}{%
+		\usebibmacro{bibindex}%
+		\usebibmacro{begentry}%
+		\usebibmacro{my:reg}%  ← your logic
 		\usebibmacro{finentry}%
 	}%
 }

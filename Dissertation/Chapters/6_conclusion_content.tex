@@ -1,0 +1,81 @@
+
+
+%1. Restate the Research Problem and Objectives
+%Begin by briefly restating the research problem and the primary objectives of your thesis. This reminds readers of the central focus of your work.
+
+% Example:
+% "In this thesis, we addressed the challenge of integrating renewable energy sources into power systems, with a focus on improving reliability and optimizing power flow under uncertainty. Our primary objectives were to develop advanced methods for reliability assessment and to propose novel optimization techniques for chance-constrained optimal power flow."
+
+% 2. Summarize Key Findings
+% Summarize the key findings and contributions of your research. Highlight the most important results and how they address the research problem.
+
+% Example:
+% "Our research led to the development of an adaptive importance sampling method, which significantly improves the accuracy and efficiency of risk estimation for reliability constraints. Additionally, the proposed A-priori Reduced Scenario Approximation (AR-SA) method reduces the number of samples required for reliable solutions in joint chance-constrained dynamic optimal power flow problems. These methods were validated through extensive simulations, demonstrating their effectiveness in handling uncertainties in power systems."
+
+% 3. Discuss the Significance and Impact
+% Discuss the broader significance and impact of your findings. Explain how your research contributes to the field and its potential real-world applications.
+
+% Example:
+% "The findings of this thesis have significant implications for the integration of renewable energy sources into power systems. By enhancing the reliability and efficiency of power system operations, our methods support the transition to sustainable energy solutions, contributing to global efforts to reduce greenhouse gas emissions and improve energy security. Furthermore, the proposed techniques can be applied to other areas of power systems engineering, offering a foundation for future advancements in the field."
+
+% 4. Address Limitations
+% Acknowledge any limitations of your research. Being transparent about the constraints and challenges you encountered adds credibility to your work.
+
+% Example:
+% "While our methods offer substantial improvements, there are limitations to consider. The adaptive importance sampling method relies on accurate physical information, which may not always be readily available. Additionally, the computational complexity of the AR-SA method, though reduced, may still pose challenges for extremely large-scale power systems."
+
+% 5. Suggest Future Work
+% Suggest directions for future research based on your findings. Identify areas that require further investigation and how they can build on your work.
+
+% Example:
+% "Future research could explore the application of the adaptive importance sampling method to real-time power system operations, addressing the challenge of obtaining real-time physical data. Further development of the AR-SA method could focus on enhancing its scalability and applicability to even larger power grids. Additionally, integrating these methods with emerging technologies, such as smart grid systems and advanced forecasting techniques, presents a promising avenue for future work."
+
+
+% 6. Final Thoughts
+% Conclude with a few final thoughts that encapsulate the essence of your research and its potential to inspire further advancements in the field.
+
+% Example:
+% "In conclusion, this thesis contributes to the ongoing efforts to integrate renewable energy sources into power systems more effectively. The developed methods not only address current challenges but also pave the way for future innovations. As the global energy landscape continues to evolve, the insights gained from this research will be instrumental in shaping a sustainable and resilient energy future."
+
+
+%In this thesis, we have explored various challenges and developed several methods in domain adaptation (DA) and out-of-distribution (OOD) detection within the context of 3D medical image segmentation. Throughout the chapters, a consistent theme emerges: the critical need to address distribution shifts to improve the reliability and robustness of medical image segmentation models.
+%
+%Starting with the analysis in Chapter~\ref{chap:mri}, we identified that low-level feature maps are particularly susceptible to domain shifts, leading to significant performance degradation. To mitigate this, we proposed fine-tuning the initial layers of the network, which proved more effective than fine-tuning the entire model, particularly in data-limited scenarios. The development of SpotTUnet further advanced this approach by autonomously determining the most affected layers, enhancing the adaptability of segmentation models across diverse medical imaging tasks.
+%
+%In Chapter~\ref{chap:ct}, we addressed domain shifts in CT images caused by different reconstruction kernels. We introduced FBPAug, a knowledge-driven augmentation method that improves the consistency of predictions across domains. Additionally, we developed F-Consistency, an unsupervised DA method that leverages paired CT images to achieve superior performance, particularly in challenging COVID-19 segmentation tasks. These methods collectively contribute to creating more robust segmentation models that can generalize better to unseen CT images.
+%
+%The M3DA benchmark introduced in Chapter~\ref{chap:da_bench} underscored the need for robust domain adaptation in medical imaging. By providing a comprehensive benchmark that covers a wide array of domain shift scenarios, we highlighted the limitations of current unsupervised DA methods, which often struggle to generalize beyond a single setup. The alternative problem settings proposed within M3DA pave the way for future research, encouraging the development of more versatile and resilient segmentation techniques. Complementing this, the BGP dataset offers a clinically realistic domain adaptation scenario with high inter-site variability, bridging the gap between methodological advances and deployment in real-world heterogeneous medical data.
+%
+%Finally, in Chapter~\ref{chap:ood_bench}, our investigation into OOD detection also revealed the shortcomings of existing approaches, which frequently resulted in high false-positive detection rates and thus poor model's generalization. We developed a simple (histogram-based) yet state-of-the-art (two second places in Medical Out Of Distribution Challenge 2022 and 2023 and superior performance in our proposed benchmark) method, called IHF. It could serve as a valuable tool in detecting distribution shifts that deep learning algorithms typically overlook.
+%
+%In conclusion, this thesis has contributed valuable insights and tools for detecting and addressing domain shifts in 3D medical image segmentation, setting the stage for further advancements in creating reliable, adaptable, and safe medical image segmentation algorithms.
+
+
+This dissertation is devoted to the development of mathematically grounded and practically robust deep learning methods for domain adaptation and out-of-distribution detection in 3D medical image segmentation. The work systematically addresses the challenge of domain shift, which remains a critical obstacle to the reliable deployment of machine learning systems in clinical environments.
+
+\begin{enumerate}
+	
+	\item A gradient-based supervised domain adaptation method, SpotTUnet, was proposed to address the problem of layer-wise adaptation in convolutional neural networks for medical image segmentation. The method optimizes a learnable layer selection policy, allowing to fine-tune the most shift-sensitive layers. The effectiveness of this approach was confirmed through extensive experimental validation, including statistically significant improvements over common fine-tuning baselines in few-shot adaptation scenarios. From a practical standpoint, SpotTUnet provides interpretable visualizations of domain shift sensitivity across network layers, which we further used to guide the design of F-Consistency and to enhance performance of existing DA algorithms, such as DANN~\cite{dann}, on the M3DA benchmark. Moreover, conclusions drawn from SpotTUnet contributed to the development of the IHF method for out-of-distribution detection.
+	
+	\item Two complementary DA methods were proposed to address performance degradation in CT segmentation caused by variations in reconstruction kernels. First, a knowledge-driven augmentation technique, Filtered Back-Projection Augmentation (FBPAug), was developed to simulate such kernel-induced domain shifts by modeling the mathematics of CT image formation in sinogram space. Second, a data-driven unsupervised DA method, F-Consistency, was introduced to align internal network representations of paired CT images reconstructed with different kernels. Both methods demonstrated statistically significant improvements over state-of-the-art approaches: FBPAug achieved high consistency in the zero-shot adaptation setting, while F-Consistency further increased segmentation quality in the standard unsupervised DA setting. FBPAug has been integrated into the production pipeline of a medical imaging startup, where it significantly improved the robustness and accuracy of CT-based segmentation models used in clinical practice.
+	
+	\item A large-scale benchmark, M3DA, was developed to evaluate unsupervised DA methods in 3D medical image segmentation under realistic and diverse shift scenarios. The benchmark reveals that existing methods close only 62\% of the performance gap on average. To support clinical relevance, a new multi-modal dataset, BGP, was published for glioblastoma segmentation with high intra-institution variability. These contributions enable systematic comparison of methods and guide the design of robust and generalizable DA algorithms.
+	
+	\item A benchmark for OOD detection in 3D medical segmentation was constructed, including clinically relevant scenarios, and was used to identify fundamental limitations of current methods. A lightweight method, IHF, was proposed as an interpretable and computationally efficient baseline, achieving top-2 in the MOOD 2022 and 2023 challenges. The benchmark and IHF serve as a foundation for further theoretical study of distributional uncertainty in medical imaging data.
+	
+\end{enumerate}
+
+The results and insights of this dissertation have already served as a foundation for several subsequent scientific works. Firstly, we used the proposed OOD benchmark to develop a novel OOD detection metric and theoretically justified framework~\cite{vasiliuk2023redesigning}. We also used components of this benchmark to analyze predictive uncertainty at the level of distinct predicted components~\cite{vasiliuk2022exploring}. Finally, several colleagues’ papers~\cite{goncharov2023vox2vec,goncharov2024anatomical,goncharov2025screener} have already complemented our research by integrating FBPAug into a self-supervised learning (SSL) framework, realizing a direction for augmentation that was originally suggested in this dissertation. These works demonstrate the relevance of the presented contributions and point toward continued progress in the robust deployment of deep learning in medical imaging.
+
+While the dissertation advances the state of domain adaptation and out-of-distribution detection in 3D medical image segmentation, several limitations define promising directions for future research.
+
+First, SpotTUnet currently operates in a supervised DA setup and relies on annotated target samples to optimize its layer-wise adaptation policy. Extending this method to an unsupervised setting -- by introducing auxiliary domain shift criteria, e.g., domain adversarial loss function, -- could substantially increase its applicability in other experimental settings. Furthermore, as transformer-based architectures~\cite{unetr} increasingly replace convolutional backbones in segmentation models, developing analogous interpretable adaptation strategies for these architectures becomes an important task.
+
+Second, although FBPAug and F-Consistency address the CT reconstruction kernel domain shift from complementary theoretical perspectives, they remain independent methods. A natural next step is to integrate FBPAug-generated synthetic pairs within the F-Consistency framework, thereby combining knowledge-driven and data-driven adaptation strategies into a unified self-supervised learning (SSL) approach, that may result in the inherently robust CT segmentation model. The follow-up work has already included FBPAug as an essential augmentation method into their contrastive SSL pretraining frameworks~\cite{goncharov2023vox2vec,goncharov2024anatomical}.
+
+% the M3DA benchmark and BGP dataset currently focus on conventional convolutional DA methods. 
+Third, future research should systematically evaluate emerging SSL and diffusion-based models within the M3DA and BGP benchmarks, as well as develop SSL paradigms explicitly aware of domain shifts in loss formulation. In particular, DA-aware contrastive objectives may provide a principled way to learn domain-invariant yet semantically consistent representations.
+
+Fourth, future work in the field of OOD detection could extend the developed state-of-the-art IHF algorithm from image-level to a pixel-level one, resulting in a segmentation-level detection of anomalies. Recent progress in SSL-based anomaly localization~\cite{goncharov2025screener} highlights the feasibility of this direction, suggesting that combining pixel-wise uncertainty estimation with feature-space distribution modeling could substantially improve model interpretability and safety in clinical use. 
+
+Overall, the presented research constitutes a systematic investigation into the reliability and robustness of deep learning models for 3D medical image segmentation under domain shift. By introducing theoretically grounded methods, publicly available benchmarks, and practically validated algorithms, this dissertation bridges the gap between academic methodology and clinical application. The results contribute to the broader effort of building \textit{trusted machine learning} in medicine -- systems that not only achieve high accuracy but also remain consistent, interpretable, and safe under real-world variability. These foundations pave the way toward the next generation of adaptive and self-aware medical artificial intelligence systems.

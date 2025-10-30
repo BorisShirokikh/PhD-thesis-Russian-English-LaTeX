@@ -2,14 +2,14 @@
 \RequirePackage[l2tabu,orthodox]{nag}  % Можно в логе получать рекомендации относительно правильного использования пакетов и предупреждения об устаревших и нерекомендуемых пакетах
 \documentclass[a4paper,14pt,oneside,openany]{memoir}  % Формат А4, 14pt (ГОСТ Р 7.0.11-2011, 5.3.6)
 
-\input{common/setup}  				% Общие настройки шаблона
+\input{common/setup}  					% Общие настройки шаблона
 \input{common/packages}  				% Пакеты общие для диссертации и автореферата
-\synopsisfalse                      		% Этот документ --- не автореферат
+\synopsisfalse                      	% Этот документ --- не автореферат
 \input{Dissertation/dispackages} 		% Пакеты только для диссертации
 \input{Dissertation/setup}      		% Упрощённые настройки шаблона
 \input{common/newnames}         		% Новые переменные, для всего проекта
 \input{common/data}             		% Основные сведения
-\input{common/styles_en}           	% Стили общие для диссертации и автореферата
+\input{common/styles_en}           		% Стили общие для диссертации и автореферата
 \input{Dissertation/disstyles}  		% Стили для диссертации
 \input{Dissertation/userstyles} 		% Стили для специфических пользовательских задач
 \input{biblio/biblatex}
@@ -31,7 +31,7 @@
 	\ifnumequal{\value{contnumfig}}{1}{}{\counterwithout{figure}{chapter}}
 	\ifnumequal{\value{contnumtab}}{1}{}{\counterwithout{table}{chapter}}
 	
-	\include{Dissertation/Chapters/1_intro}    	% Введение
+	\include{Dissertation/Chapters/1_intro}
 	\include{Dissertation/Chapters/2_mri}
 	\include{Dissertation/Chapters/3_ct}
 	\include{Dissertation/Chapters/4_da_bench}
