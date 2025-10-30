@@ -13,7 +13,7 @@
 \newbibmacro*{my:core}{%
 	% 1) Authors
 	\printnames{author}%
-	\addperiod\space%
+	\setunit{\addspace/\space}%
 	% 2) Title
 	\printfield[titlecase]{title}%
 	\setunit{\addspace//\space}%
@@ -37,7 +37,7 @@
 \newbibmacro*{my:online}{%
 	% 1) Authors
 	\printnames{author}%
-	\addperiod\space%
+	\setunit{\addspace/\space}%
 	% 2) Title [Electronic Resource]
 	\printfield[titlecase]{title}\setunit{\space}\printtext{[Electronic Resource]}%
 	\newunit\newblock%
